@@ -1,0 +1,308 @@
+<project name="APK/IPA packaging" basedir="." default="checkOS">
+ 	
+	<tstamp>
+		<format property="timestamp" pattern="yyyy-MM-dd_HH-mm-ss" />
+	</tstamp>
+	
+	<!--
+	//==========================================================================
+	//
+	//  BUILD TYPE
+	//
+	//==========================================================================
+	-->
+	
+	<property name="BUILD_PLATFORM" value="and"/> <!-- ios/and -->
+	
+	<!--
+	//==========================================================================
+	//
+	//  PROPERTIES
+	//
+	//==========================================================================
+	-->
+	
+	<!-- ANT REQUISITES -->
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties" classpath="ant-contrib-0.6.jar"/>
+			
+	<!-- READS FLEX_HOME FROM ENVIRONMENT VARIABLE IF EXISTS -->
+	<property environment="env"/>
+	<propertycopy property="FLEX_HOME" from="env.FLEX_HOME" />
+	<echo>SDK : ${FLEX_HOME}</echo>
+
+	<!-- GENERAL PROPERTIES -->
+	<property name="DEPLOY_DIR" value="DEPLOY"/>
+	<property name="DEBUG_DIR" value="build-debug" />
+	<property name="DESKTOP_DESCRIPTOR" value="${DEBUG_DIR}/$DesktopDescriptor" />
+	<property name="DESKTOP_DESCRIPTOR_ORIGINAL" value="../src/$DesktopDescriptor" />
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties" classpath="ant-contrib-0.6.jar"/>
+	<taskdef resource="flexTasks.tasks" classpath="${FLEX_HOME}/ant/lib/flexTasks.jar"/>
+
+	<!-- SWF COMPILER PATH -->
+	<property name="MXMLC_PATH" value="${FLEX_HOME}/lib/mxmlc.jar" />
+	
+	<!-- AIR COMPILER PATH -->
+	<property name="ADT_PATH" value="${FLEX_HOME}/lib/adt.jar" />
+    
+	<!-- PROJECT SOURCE LOCATIONS -->
+	<property name="SOURCE_DIR" value="../src"/>
+	<property name="SOURCE_APP_FILE" value="${SOURCE_DIR}/$ProjectFile" />
+	
+	
+	<!--
+	//==========================================================================
+	//
+	//  PROPERTIES
+	//	NEEDS USER TO CHANGE AS NECESSARY
+	//
+	//==========================================================================
+	-->
+	
+	<property name="SWF_FILENAME" value="$ProjectSWF" />
+	<property name="SWF_FILE_PATH" value="${DEBUG_DIR}/${SWF_FILENAME}" />
+	<property name="MOBILE_PACKAGE_NAME" value="$ProjectName" />
+	
+	<!-- CERTIFICATE(S) FOR DESKTOP PACKAGING -->
+	<property name="DESKTOP_SELFSIGNED_CERTIFICATE" value="$Certificate.p12" />
+	<property name="DESKTOP_SELFSIGNED_CERTIFICATE_PASS" value="$Password" />
+	<property name="DESKTOP_PACKAGE_NAME" value="$ProjectName" />
+	
+	<!-- APPLE PROVISIONING PROFILE -->
+	<property name="APPLE_ITUNES_PROVISIONING_PROFILE" value="APPLE_CERTIFICATE.mobileprovision" />
+	<property name="APPLE_ITUNES_SIGNED_CERTIFICATE" value="$Certificate.p12"/>
+	<property name="APPLE_ITUNES_SIGNED_CERTIFICATE_PASS" value="$Password"/>
+	
+	
+	<!--
+	//==========================================================================
+	//
+	//  TASKS
+	//
+	//==========================================================================
+	-->
+
+	<!-- OS Check and decision on opening Task -->
+	<target name="checkOS">
+		<if>
+			<os family="windows"/>
+			<then>
+				<if>
+					<equals arg1="${BUILD_PLATFORM}" arg2="ios"/>
+					<then>
+						<echo message="Target platform can not build on Windows; Please, use MacOSX only." />
+					</then>
+					<else>
+						<antcall target="disposeTempWindows"></antcall>
+					</else>
+				</if>
+			</then>
+			<elseif>
+				<os family="unix"/>
+				<then>
+					<if>
+						<equals arg1="${BUILD_PLATFORM}" arg2="ios"/>
+						<then>
+							<antcall target="disposeTempUNIXAfterIPA"></antcall>
+						</then>
+						<elseif>
+							<equals arg1="${BUILD_PLATFORM}" arg2="and"/>
+							<then>
+								<antcall target="disposeTempUNIXAfterAPK"></antcall>
+							</then>
+						</elseif>
+					</if>
+				</then>
+			</elseif>
+		</if>
+	</target>
+	
+	<!-- CREATE SELF-SIGNED CERTIFICATE IF DOES NOT EXISTS ALREADY -->
+	<target name="createCertificate" unless="DESKTOP_SELFSIGNED_CERTIFICATE.exists">
+		<echo>Self-signed .p12 certificate generation</echo>
+		<java jar="${ADT_PATH}" fork="true" failonerror="true">
+			<arg line="-certificate" />
+			<arg line="-cn '${DESKTOP_PACKAGE_NAME}'" />
+			<arg line="2048-RSA" />
+	   		<arg line="${DESKTOP_SELFSIGNED_CERTIFICATE}" />
+	   		<arg line="${DESKTOP_SELFSIGNED_CERTIFICATE_PASS}"/>
+		</java>
+	 </target>
+	
+	
+	<!--
+	//==========================================================================
+	//
+	//  GLOBAL
+	//
+	//==========================================================================
+	-->
+	
+	<!-- REMOVES ANY PREVIOUS DEBUG AND DEPLOY DIRECTORIES -->
+	<target name="init">
+		<delete dir="${DEPLOY_DIR}" />
+		<delete dir="${DEBUG_DIR}" />
+		<mkdir dir="${DEPLOY_DIR}" />
+		<mkdir dir="${DEBUG_DIR}" />
+	</target>
+	
+	<!-- MODIFICATION AND COPYING REQUISITE FILES FOR IPA -->
+	<target name="modifyDescriptor">
+		<copy file="${DESKTOP_DESCRIPTOR_ORIGINAL}" todir="${DEBUG_DIR}" overwrite="true"/>
+		<replace file="${DESKTOP_DESCRIPTOR}" token="${SWF_FILENAME}" value="${SWF_FILE_PATH}" />
+		<if>
+			<os family="unix"/>
+			<then>
+				<echo message="..Starting IPK build.."/>
+				<copy file="${APPLE_ITUNES_PROVISIONING_PROFILE}" todir="${DEBUG_DIR}" overwrite="true"/>
+				<copy file="${APPLE_ITUNES_SIGNED_CERTIFICATE}" todir="${DEBUG_DIR}" overwrite="true"/>
+				<property name="ADT_TARGET_TYPE" value="ipa-test-interpreter"/>
+				<property name="ADT_KEYSTORE_FILE_PASS" value="${APPLE_ITUNES_SIGNED_CERTIFICATE_PASS}" />
+				<property name="ADT_KEYSTORE_FILE" value="${DEBUG_DIR}/${APPLE_ITUNES_SIGNED_CERTIFICATE}"/>
+				<property name="MOBILE_FILENAME_PATH" value="${DEPLOY_DIR}/${MOBILE_PACKAGE_NAME}.ipa"/>
+			</then>
+		</if>
+	</target>
+	
+	<!-- MODIFICATION AND COPYING REQUISITE FILES FOR APK -->
+	<target name="modifyDescriptorForAndroid">
+		<echo message="..Starting APK build.."/>
+		<available file="${DESKTOP_SELFSIGNED_CERTIFICATE}" property="DESKTOP_SELFSIGNED_CERTIFICATE.exists" />
+		<if>
+			<equals arg1="${DESKTOP_SELFSIGNED_CERTIFICATE.exists}" arg2="true"/>
+			<then>
+				<copy file="${DESKTOP_SELFSIGNED_CERTIFICATE}" todir="${DEBUG_DIR}" overwrite="true"/>
+			</then>
+			<else>
+				<antcall target="createCertificate"></antcall>
+			</else>
+		</if>
+		<copy file="${DESKTOP_DESCRIPTOR_ORIGINAL}" todir="${DEBUG_DIR}" overwrite="true"/>
+		<copy file="${DESKTOP_SELFSIGNED_CERTIFICATE}" todir="${DEBUG_DIR}" overwrite="true"/>
+		<replace file="${DESKTOP_DESCRIPTOR}" token="${SWF_FILENAME}" value="${SWF_FILE_PATH}" />
+		<var name="ADT_TARGET_TYPE" value="apk-captive-runtime"/> <!-- resetting value to property -->
+		<var name="ADT_KEYSTORE_FILE_PASS" value="${DESKTOP_SELFSIGNED_CERTIFICATE_PASS}" /> <!-- resetting value to property -->
+		<var name="ADT_KEYSTORE_FILE" value="${DEBUG_DIR}/${DESKTOP_SELFSIGNED_CERTIFICATE}"/> <!-- resetting value to property -->
+		<var name="MOBILE_FILENAME_PATH" value="${DEPLOY_DIR}/${MOBILE_PACKAGE_NAME}.apk"/> <!-- resetting value to property -->
+	</target>
+	
+	
+	<!--
+	//==========================================================================
+	//
+	//  GLOBAL BINARIES
+	//
+	//==========================================================================
+	-->
+	
+	<!-- COMPILING SWF -->
+	<target name="compileSWF">
+		<mxmlc file="${SOURCE_APP_FILE}" output="${SWF_FILE_PATH}" swf-version="25" configname="air" locale="en_US" 
+			fork="true" optimize="true" actionscript-file-encoding="UTF-8" incremental="false" 
+			keep-generated-actionscript="false" debug="false">
+			
+			<theme dir="${FLEX_HOME}/frameworks/themes">
+				<include name="Mobile/mobile.swc" /> <!-- Flex Mobile Theme -->
+			</theme>
+			
+			<load-config filename="${FLEX_HOME}/frameworks/airmobile-config.xml"/>
+			<compiler.library-path dir="${FLEX_HOME}" append="true">
+				<include name="frameworks/libs" />
+				<include name="frameworks/locale/en_US" />
+			</compiler.library-path>
+			
+			<source-path path-element="${SOURCE_DIR}"/>
+		</mxmlc>
+	</target>
+	
+	
+	<!--
+	//==========================================================================
+	//
+	//  MACOS/WINDOWS BINARIES
+	//
+	//==========================================================================
+	-->
+	
+	<!-- APK STEP 3 - CREATES APK -->
+	<target name="compileAPK" depends="modifyDescriptorForAndroid, signAIRIFile">
+		<java jar="${ADT_PATH}" fork="true" failonerror="true">
+			<arg line="-package" />
+			<arg line="-target ${ADT_TARGET_TYPE}"/>
+			<arg line="-storetype pkcs12" />
+			<arg line="-keystore ${ADT_KEYSTORE_FILE}" />
+			<arg line="-storepass ${ADT_KEYSTORE_FILE_PASS}" />
+			<arg line="${MOBILE_FILENAME_PATH}" />
+	   		<arg line="${DEBUG_DIR}/${MOBILE_PACKAGE_NAME}.airi" />
+		</java>
+	</target>
+	
+	<!-- APK STEP 2 - SIGN AIRI FILE -->
+	<target name="signAIRIFile" depends="prepareAIRIFile">
+		<java jar="${ADT_PATH}" fork="true" failonerror="true">
+			<arg line="-sign" />
+			<arg line="-storetype pkcs12" />
+			<arg line="-keystore '${ADT_KEYSTORE_FILE}'" />
+			<arg line="-storepass '${ADT_KEYSTORE_FILE_PASS}'" />
+			<arg line="${DEBUG_DIR}/${MOBILE_PACKAGE_NAME}.airi" />
+			<arg line="${DEBUG_DIR}/${MOBILE_PACKAGE_NAME}.air" />
+		</java>
+	</target>
+	
+	<!-- APK STEP 1 - CREATES THE AIRI FILE -->
+	<target name="prepareAIRIFile" depends="compileSWF">
+		<java jar="${ADT_PATH}" fork="true" failonerror="true">
+			<arg line="-prepare" />
+			<arg line="${DEBUG_DIR}/${MOBILE_PACKAGE_NAME}.airi" />
+			<arg line="'${DESKTOP_DESCRIPTOR}'" />
+			<arg line="'${SWF_FILE_PATH}'" />
+			<!-- Add folders to be bundled in the AIR file here -->
+		</java>
+	</target>
+	
+	<!--
+	//==========================================================================
+	//
+	//  MACOS BINARY
+	//
+	//==========================================================================
+	-->
+	
+	<!-- COMPILE IPA -->
+	<target name="compileIPA" depends="modifyDescriptor, compileSWF">
+		<java jar="${ADT_PATH}" fork="true" failonerror="true">
+			<arg line="-package" />
+			<arg line="-target '${ADT_TARGET_TYPE}'"/>
+			<arg line="-provisioning-profile '${DEBUG_DIR}/${APPLE_ITUNES_PROVISIONING_PROFILE}'" />
+			<arg line="-storetype pkcs12" />
+			<arg line="-keystore '${ADT_KEYSTORE_FILE}'" />
+			<arg line="-storepass ${ADT_KEYSTORE_FILE_PASS}" />
+			<arg line="'${MOBILE_FILENAME_PATH}'" />
+	   		<arg line="'${DESKTOP_DESCRIPTOR}'" />
+	   		<arg line="'${SWF_FILE_PATH}'" />
+		</java>
+	</target>
+	
+	
+	<!--
+	//==========================================================================
+	//
+	//  DISPOSE
+	//
+	//==========================================================================
+	-->
+	
+	<!-- DELETE TEMP FILES FOR WINDOWS -->
+	<target name="disposeTempWindows" depends="init, compileAPK">
+		<delete dir="${DEBUG_DIR}" />
+	</target>
+	
+	<!-- DELETE TEMP FILES FOR MACOS 1 -->
+	<target name="disposeTempUNIXAfterIPA" depends="init, compileIPA">
+		<delete dir="${DEBUG_DIR}" />
+	</target>
+	
+	<!-- DELETE TEMP FILES FOR MACOS 2 -->
+	<target name="disposeTempUNIXAfterAPK" depends="init, compileAPK">
+		<delete dir="${DEBUG_DIR}" />
+	</target>
+</project>

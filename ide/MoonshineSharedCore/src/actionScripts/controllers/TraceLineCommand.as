@@ -1,0 +1,197 @@
+////////////////////////////////////////////////////////////////////////////////
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http://www.apache.org/licenses/LICENSE-2.0 
+// 
+// Unless required by applicable law or agreed to in writing, software 
+// distributed under the License is distributed on an "AS IS" BASIS, 
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and 
+// limitations under the License
+// 
+// No warranty of merchantability or fitness of any kind. 
+// Use this software at your own risk.
+// 
+////////////////////////////////////////////////////////////////////////////////
+package actionScripts.controllers
+{
+	import flash.events.Event;
+	
+	import actionScripts.events.AddTabEvent;
+	import actionScripts.events.EditorPluginEvent;
+	import actionScripts.events.FilePluginEvent;
+	import actionScripts.events.GlobalEventDispatcher;
+	import actionScripts.events.OpenFileEvent;
+	import actionScripts.factory.FileLocation;
+	import actionScripts.locator.IDEModel;
+	import actionScripts.ui.IContentWindow;
+	import actionScripts.ui.editor.BasicHTMLViewer;
+	import actionScripts.ui.editor.BasicTextEditor;
+	import actionScripts.ui.notifier.ActionNotifier;
+	import actionScripts.valueObjects.ConstantsCoreVO;
+	import actionScripts.valueObjects.FileWrapper;
+	import actionScripts.valueObjects.URLDescriptorVO;
+
+
+	public class TraceLineCommand implements ICommand
+	{
+		public function TraceLineCommand()
+		{
+		}
+		protected var model:IDEModel;
+		protected var wrapper:FileWrapper;
+		protected var file:FileLocation;
+		protected var atLine:int = -1;
+		private var loader: DataAgent;
+		
+		protected var ged:GlobalEventDispatcher = GlobalEventDispatcher.getInstance();
+		
+		public function execute(event:Event):void
+		{
+			ActionNotifier.getInstance().notify("Open file");
+			model = IDEModel.getInstance();
+			
+			if (event is OpenFileEvent)
+			{
+				var e:OpenFileEvent = event as OpenFileEvent;
+				if (e.file)
+				{
+					file = e.file;
+					wrapper = e.wrapper;
+					if (e.atLine > -1)
+						atLine = e.atLine;
+					openFile();
+					return;
+				}
+			}
+			if (ConstantsCoreVO.IS_AIR)
+			{
+			file = new FileLocation();
+			file.fileBridge.browseForOpen("Open File", openFile, cancelOpenFile);
+			}
+		}
+		
+		protected function cancelOpenFile():void
+		{
+			/*event.target.removeEventListener(Event.SELECT, openFile);
+			event.target.removeEventListener(Event.CANCEL, cancelOpenFile);*/
+		}
+		
+		protected function openFile(fileDir:Object=null):void
+		{ 
+			if (fileDir) file = new FileLocation(fileDir.nativePath);
+			// If file is open already, just focus that editor.&& ed.currentFile.nativePath == file.nativePath)
+			for each (var contentWindow:IContentWindow in model.editors)
+			{
+				var ed:BasicTextEditor = contentWindow as BasicTextEditor;
+				if (ed
+					&& ed.currentFile
+					&& ed.currentFile.fileBridge.nativePath == file.fileBridge.nativePath)
+				
+				{
+					model.activeEditor = ed;
+					if (atLine > -1)
+					{
+						ed.getEditorComponent().model.hasTraceSelection = true;
+						ed.getEditorComponent().scrollTo(atLine);
+						ed.getEditorComponent().selectTraceLine(atLine);
+					}	
+					return;
+				}
+			}
+			
+			// Let plugins know that we're opening a file & abort it if they want to render it themselves
+			var plugEvent:FilePluginEvent = new FilePluginEvent(FilePluginEvent.EVENT_FILE_OPEN, file);
+			ged.dispatchEvent(plugEvent);
+			if (plugEvent.isDefaultPrevented())
+				return;
+			
+			// Load and see if it's a binary file	
+			if (ConstantsCoreVO.IS_AIR)
+			{
+				file.fileBridge.getFile.addEventListener(Event.COMPLETE, fileLoaded);
+				file.fileBridge.load();
+			}
+			else
+			{
+				if (wrapper) wrapper.isWorking = true;
+				loader = new DataAgent(URLDescriptorVO.FILE_OPEN, fileLoadedFromServer, fileFault, {path:file.fileBridge.nativePath});
+			}
+						
+		}
+		
+		private function fileLoadedFromServer(value:Object, message:String=null):void
+		{
+			// Test if file is binary
+			var binary:Boolean = /[\x00-\x08\x0E-\x1F]/.test(value.toString());
+			
+			if (binary) openBinaryFile();
+			else openTextFile(value);
+			
+			fileFault(null);
+		}
+		private function fileLoaded(event:Event):void
+		{
+			file.removeEventListener(Event.COMPLETE, fileLoaded);
+			
+			// Test if file is binary
+			var binary:Boolean = /[\x00-\x08\x0E-\x1F]/.test(file.fileBridge.data.toString());
+			
+			if (binary) openBinaryFile();
+			else openTextFile(null);	
+		}
+		private function fileFault(message:String):void
+		{
+			if (wrapper) wrapper.isWorking = false;
+			loader = null;
+			wrapper = null;
+			file = null;
+		}
+		private function openBinaryFile():void
+		{
+			// Let WebKit try to display binary files (works for images)
+			var htmlViewer:BasicHTMLViewer = new BasicHTMLViewer();
+			htmlViewer.open(file);
+			
+			ged.dispatchEvent(
+				new AddTabEvent(htmlViewer)
+			);
+		}
+		
+		private function openTextFile(value:Object):void
+		{
+			// Open all text files with basic text editor
+			var editor:BasicTextEditor = new BasicTextEditor()
+			// Let plugins hook in syntax highlighters & other functionality
+			var editorEvent:EditorPluginEvent = new EditorPluginEvent(EditorPluginEvent.EVENT_EDITOR_OPEN);
+			editorEvent.editor = editor.getEditorComponent();
+			editorEvent.file = file;
+			editorEvent.fileExtension = file.fileBridge.extension;
+			ged.dispatchEvent(editorEvent);
+			
+			if (!ConstantsCoreVO.IS_AIR)
+			{
+				var rawData:String = String(value);
+				var jsonObj:Object = JSON.parse(rawData);
+				editor.open(file, jsonObj.text);
+			}
+			else
+			{
+				editor.open(file);
+			}
+			
+			if (atLine > -1)
+				editor.scrollTo(atLine);
+			
+			ged.dispatchEvent(
+				new AddTabEvent(editor)
+			);
+			
+		}
+		
+	}
+	
+}

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+  <output>
+    <movie fps="60"/>
+    <movie version="22"/>
+    <movie path="bin-debug/$GrailsDomainClassName$.swf"/>
+    <movie width="800"/>
+    <movie disabled="False"/>
+    <movie height="600"/>
+    <movie background="#FFFFFF"/>
+    <movie input=""/>
+  </output>
+  &lt;!-- Other classes to be compiled into your SWF --&gt;
+  <classpaths>
+    <class path="src"/>
+  </classpaths>
+  <moonshineResourcePaths></moonshineResourcePaths>
+  <build>
+    <option staticLinkRSL="False"/>
+    <option showBindingWarnings="True"/>
+    <option additional=""/>
+    <option optimize="False"/>
+    <option showDeprecationWarnings="True"/>
+    <option compilerConstants=""/>
+    <option showUnusedTypeSelectorWarnings="True"/>
+    <option antBuildPath="build/build.xml"/>
+    <option strict="True"/>
+    <option customSDK=""/>
+    <option accessible="False"/>
+    <option useNetwork="True"/>
+    <option allowSourcePathOverlap="False"/>
+    <option useResourceBundleMetadata="True"/>
+    <option benchmark="False"/>
+    <option locale=""/>
+    <option es="False"/>
+    <option verboseStackTraces="False"/>
+    <option loadConfig=""/>
+    <option linkReport=""/>
+    <option warnings="True"/>
+    <option showActionScriptWarnings="True"/>
+  </build>
+  <includeLibraries></includeLibraries>
+  <libraryPaths></libraryPaths>
+  <externalLibraryPaths></externalLibraryPaths>
+  <rslPaths></rslPaths>
+  <intrinsics></intrinsics>
+  <library></library>
+  <compileTargets>
+    <compile path="src/$GrailsDomainClassName$Main.mxml"/>
+  </compileTargets>
+  <hiddenPaths></hiddenPaths>
+  <preBuildCommand>null</preBuildCommand>
+  <postBuildCommand alwaysRun="False">null</postBuildCommand>
+  <options>
+    <option defaultBuildTargets=""/>
+    <option testMovie=""/>
+    <option showHiddenPaths="False"/>
+    <option testMovieCommand=""/>
+  </options>
+</project>

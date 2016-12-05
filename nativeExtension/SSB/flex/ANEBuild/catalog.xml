@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding ="utf-8"?>
+<swc xmlns="http://www.adobe.com/flash/swccatalog/9">
+  <versions>
+    <swc version="1.2" />
+    <flex version="4.15.0" build="20160104" minimumSupportedVersion="3.0.0" />
+  </versions>
+  <features>
+    <feature-script-deps />
+    <feature-components />
+    <feature-files />
+  </features>
+  <components>
+    <component className="net.prominic.SecurityScopeBookmark:Main" name="Main" uri="https://prominic.net"  />
+  </components>
+  <libraries>
+    <library path="library.swf">
+      <script name="actionScripts/interfaces/IScopeBookmarkInterface" mod="1470289593000" signatureChecksum="869503796" >
+        <def id="actionScripts.interfaces:IScopeBookmarkInterface" /> 
+        <dep id="AS3" type="n" /> 
+        <dep id="Object" type="i" /> 
+      </script>
+      <script name="_9cf7fdc63669c2ee804909eac368ab1718b7ba9bd4189fca38d90f2b4cc1417f_flash_display_Sprite" mod="1470292723003" signatureChecksum="2106031069" >
+        <def id="_9cf7fdc63669c2ee804909eac368ab1718b7ba9bd4189fca38d90f2b4cc1417f_flash_display_Sprite" /> 
+        <dep id="flash.system:Security" type="e" /> 
+        <dep id="AS3" type="n" /> 
+        <dep id="flash.display:Sprite" type="i" /> 
+      </script>
+      <script name="net/prominic/SecurityScopeBookmark/Main" mod="1470292555000" signatureChecksum="3205880399" >
+        <def id="net.prominic.SecurityScopeBookmark:Main" /> 
+        <dep id="flash.external:ExtensionContext" type="e" /> 
+        <dep id="flash.events:IEventDispatcher" type="s" /> 
+        <dep id="flash.external:ExtensionContext" type="s" /> 
+        <dep id="AS3" type="n" /> 
+        <dep id="flash.events:EventDispatcher" type="i" /> 
+        <dep id="actionScripts.interfaces:IScopeBookmarkInterface" type="i" /> 
+      </script>
+      <digests>
+        <digest type="SHA-256" signed="false" value="eb058bdb95db24a2ec83d2b8bac389276887a7af23b634cef7f0e4fac627cb62"   />
+      </digests>
+    </library>
+  </libraries>
+  <files>
+  </files>
+</swc>

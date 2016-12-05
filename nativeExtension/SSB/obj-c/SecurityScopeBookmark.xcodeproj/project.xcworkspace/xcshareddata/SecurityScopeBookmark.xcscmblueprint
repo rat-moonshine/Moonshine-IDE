@@ -1,0 +1,25 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "d5f70784-79f0-0410-ab24-a05393e43692++2394",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+    "d5f70784-79f0-0410-ab24-a05393e43692++2394" : {
+
+    }
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "d5f70784-79f0-0410-ab24-a05393e43692++2394" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "26559080-FAD4-4F78-871D-25CC6DDC642F",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "d5f70784-79f0-0410-ab24-a05393e43692++2394" : "SecurityScopeBookmarkNew\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "SecurityScopeBookmark",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "SecurityScopeBookmark.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/svn-66a.prominic.net\/svn\/grails",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "d5f70784-79f0-0410-ab24-a05393e43692++2394"
+    }
+  ]
+}
