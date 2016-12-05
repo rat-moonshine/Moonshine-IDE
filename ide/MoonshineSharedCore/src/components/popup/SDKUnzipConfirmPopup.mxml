@@ -173,7 +173,11 @@
 			 */
 			protected function onSDKDownlaodRequest(event:MouseEvent):void
 			{
-				if (ConstantsCoreVO.IS_MACOS) currentState = "default";
+				if (ConstantsCoreVO.IS_MACOS) 
+				{
+					showAsHelperDownloader = true;
+					currentState = "default";
+				}
 				else 
 				{
 					dispatchEvent(new Event(HelpPlugin.EVENT_APACHE_SDK_DOWNLOADER_REQUEST));
