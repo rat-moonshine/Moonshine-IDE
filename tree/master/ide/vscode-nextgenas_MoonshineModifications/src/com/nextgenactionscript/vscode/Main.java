@@ -15,13 +15,11 @@ limitations under the License.
 */
 package com.nextgenactionscript.vscode;
 
-import java.io.IOException;
+import java.net.Socket;
 
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import org.xsocket.connection.IServer;
-import org.xsocket.connection.Server;
-
+import org.eclipse.lsp4j.jsonrpc.Launcher;
+import org.eclipse.lsp4j.launch.LSPLauncher;
+import org.eclipse.lsp4j.services.LanguageClient;
 
 /**
  * Contains the entry point for the JAR.
@@ -30,86 +28,41 @@ public class Main
 {
     private static final int MISSING_PORT = 100;
     private static final int SERVER_CONNECT_ERROR = 101;
+    private static final String SYSTEM_PROPERTY_PORT = "nextgeas.vscode.port";
+    private static final String SOCKET_HOST = "localhost";
 
     /**
      * The main entry point when the JAR is run. Opens a socket to communicate
      * with Visual Studio Code using the port specified with the
      * -Dnextgeas.vscode.port command line option. Then, instantiates the
-     * ActionScriptLanguageServer, and passes it to an instance of the
-     * LanguageServerToJsonAdapter class provided by the typefox/ls-api library,
+     * ActionScriptLanguageServer, and passes it to the LSP4J library,
      * which handles all of the language server protocol communication.
-     * 
-     * LanguageServerToJsonAdapter calls methods on ActionScriptLanguageServer
-     * as requests come in from VSCode.
+     * LSP4J calls methods on ActionScriptLanguageServer as requests come in
+     * from the text editor.
      */
-    protected static IServer srv = null;
     public static void main(String[] args)
     {
-    	try{
-    		srv = new Server(58080, new xSocketDataHandler());
-    		srv.run();
-        	} catch (SocketException e)
-            {
-                e.printStackTrace();
-            }
-      /*  String port = System.getProperty("nextgeas.vscode.port");
+        String port = System.getProperty(SYSTEM_PROPERTY_PORT);
         if (port == null)
         {
-            System.err.println("Error: System property nextgeas.vscode.port is required.");
+            System.err.println("NextGen ActionScript language server encountered an error: System property nextgeas.vscode.port is required.");
             System.exit(MISSING_PORT);
         }
         try
         {
-            Socket socket = new Socket("localhost", Integer.parseInt(port));
-
+            Socket socket = new Socket(SOCKET_HOST, Integer.parseInt(port));
             ActionScriptLanguageServer server = new ActionScriptLanguageServer();
-
-            LanguageServerToJsonAdapter jsonServer = new LanguageServerToJsonAdapter(server);
-            jsonServer.connect(socket.getInputStream(), socket.getOutputStream());
-            jsonServer.getProtocol().addErrorListener((message, error) -> {
-                System.err.println(message);
-                if (error != null)
-                {
-                    error.printStackTrace();
-                }
-            });
-
-            jsonServer.join();
+            Launcher<LanguageClient> launcher = LSPLauncher.createServerLauncher(
+                    server, socket.getInputStream(), socket.getOutputStream());
+            server.connect(launcher.getRemoteProxy());
+            launcher.startListening();
         }
-        catch (Throwable t)
+        catch (Exception e)
         {
-            System.err.println("Error: " + t.toString());
+            System.err.println("NextGen ActionScript language server failed to connect.");
+            System.err.println("Visit the following URL to file an issue, and please include this log: https://github.com/BowlerHatLLC/vscode-nextgenas/issues");
+            e.printStackTrace(System.err);
             System.exit(SERVER_CONNECT_ERROR);
         }
     }
-}*/
-catch (UnknownHostException e) {
-	System.err.println("Error: " + e.toString());
-	e.printStackTrace();
-	
-} catch (IOException e) {
-	// TODO Auto-generated catch block
-	System.err.println("Error: " + e.toString());
-	e.printStackTrace();
 }
-catch (Throwable e) {
-    e.printStackTrace();
-}
-}
-protected static void shutdownServer()
-{
-try
-{
-    srv.close();
- 
-  }
-catch(Exception ex)
-{
-	System.err.println("Error: " + ex.toString());
-	ex.printStackTrace();
-}
-
-}
-}
-
-

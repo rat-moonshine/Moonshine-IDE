@@ -29,6 +29,7 @@
     <target name="init">
         <!-- Create the time stamp -->
         <tstamp/>
+        <delete dir="${build}"/>
         <!-- Create the build directory structure used by compile -->
         <mkdir dir="${build}"/>
     </target>
@@ -39,7 +40,7 @@
         <javac  srcdir="${src}" 
         	    destdir="${build}"
         	   	includeAntRuntime="false"
-        	    >
+        	    debug="true">
         	<classpath>
         		<path refid="default.classpath" />
         	</classpath>
@@ -49,8 +50,14 @@
     <target name="dist" depends="compile">
         <jar destfile="${jar.path}" filesetmanifest="mergewithoutmain">
             <manifest>
-                <attribute name="Main-Class" value="com.nextgenactionscript.vscode.Main"/>
+                <attribute name="Main-Class" value="moonshine.Main"/>
                 <attribute name="Class-Path" value="."/>
+                <!--
+                    Moonshine packages JARs from FlexJS instead of loading
+                    separate JARs from a real SDK. The language server tries to
+                    read the FlexJS version, so we need a valid value.
+                -->
+                <attribute name="Implementation-Version" value="0.7.0"/> 
             </manifest>
             <fileset dir="${build}"/>
             <zipfileset excludes="META-INF/*.SF" src="${lib}/antlr-2.7.7.jar"/>
@@ -76,15 +83,15 @@
             <zipfileset excludes="META-INF/*.SF" src="${lib}/guava-18.0.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${lib}/gunit-3.5.2.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${lib}/hamcrest-core-1.1.jar"/>
-            <zipfileset excludes="META-INF/*.SF" src="${lib}/io.typefox.lsapi-0.3.0.jar"/>
-            <zipfileset excludes="META-INF/*.SF" src="${lib}/io.typefox.lsapi.annotations-0.3.0.jar"/>
-            <zipfileset excludes="META-INF/*.SF" src="${lib}/io.typefox.lsapi.services-0.3.0.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${lib}/jburg-1.10.3.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${lib}/jflex-1.6.0.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${lib}/json-20160212.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${lib}/jsr305-3.0.1.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${lib}/junit-4.10.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${lib}/lzma-sdk-4j-9.22.0.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${lib}/org.eclipse.lsp4j-0.1.0.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${lib}/org.eclipse.lsp4j.generator-0.1.0.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${lib}/org.eclipse.lsp4j.jsonrpc-0.1.0.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${lib}/org.eclipse.xtend.lib-2.10.0.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${lib}/org.eclipse.xtend.lib.macro-2.10.0.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${lib}/org.eclipse.xtext.xbase.lib-2.10.0.jar"/>
