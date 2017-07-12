@@ -2,7 +2,7 @@
 <root>
 	<isDesktop>false</isDesktop> <!-- true|false -->
 	<isDevelopmentVersion>false</isDevelopmentVersion> <!-- true|false -->
-	<buildVersion><![CDATA[1.0.1]]></buildVersion>
+	<buildVersion><![CDATA[1.5.0]]></buildVersion>
 	<isMigration>false</isMigration> <!-- true|false -->
 	<keepDebugFiles>false</keepDebugFiles> <!-- true|false -->
 
