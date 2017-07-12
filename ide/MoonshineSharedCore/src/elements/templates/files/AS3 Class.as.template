@@ -1,9 +1,0 @@
-package $packageName
-{
-	$modifierA $modifierB class $fileName
-	{
-		public function $fileName()
-		{
-		}
-	}
-}
