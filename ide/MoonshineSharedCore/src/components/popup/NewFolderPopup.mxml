@@ -33,7 +33,6 @@
 	</fx:Metadata>
 	<fx:Script>
 		<![CDATA[
-			
 			import mx.collections.ArrayCollection;
 			import mx.events.FlexEvent;
 			import mx.events.ListEvent;

@@ -18,6 +18,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 package actionScripts.ui.editor
 {
+	import flash.events.Event;
+	import flash.events.KeyboardEvent;
+	import flash.events.MouseEvent;
+	import flash.events.TextEvent;
+	import flash.geom.Point;
+	import flash.ui.Keyboard;
+	
+	import mx.utils.StringUtil;
+	
 	import actionScripts.events.ChangeEvent;
 	import actionScripts.events.CompletionItemsEvent;
 	import actionScripts.events.DiagnosticsEvent;
@@ -27,17 +36,9 @@ package actionScripts.ui.editor
 	import actionScripts.events.SignatureHelpEvent;
 	import actionScripts.events.TypeAheadEvent;
 	import actionScripts.ui.editor.text.TextLineModel;
+	import actionScripts.ui.editor.text.change.TextChangeInsert;
 	import actionScripts.valueObjects.Diagnostic;
 	import actionScripts.valueObjects.Location;
-
-	import flash.events.Event;
-
-	import flash.events.KeyboardEvent;
-	import flash.events.MouseEvent;
-
-	import flash.events.TextEvent;
-	import flash.geom.Point;
-	import flash.ui.Keyboard;
 
 	public class ActionScriptTextEditor extends BasicTextEditor
 	{
@@ -178,6 +179,11 @@ package actionScripts.ui.editor
 			var typeAnnotation:Boolean = String.fromCharCode(event.charCode) == ":";
 			var space:Boolean = String.fromCharCode(event.charCode) == " ";
 			var openTag:Boolean = String.fromCharCode(event.charCode) == "<";
+			/*var openingBracket:Boolean = String.fromCharCode(event.charCode) == "(";
+			var openingSingleQuote:Boolean = String.fromCharCode(event.charCode) == "'";
+			var openingDoubleQuote:Boolean = String.fromCharCode(event.charCode) == '"';*/
+			var enterKey:Boolean = event.keyCode == 13;
+			
 			if (ctrlSpace || memberAccess || typeAnnotation || space || openTag)
 			{
 				if(!ctrlSpace)
@@ -204,8 +210,98 @@ package actionScripts.ui.editor
 				dispatchSignatureHelpPending = false;
 				dispatchSignatureHelpEvent();
 			}
+			
+			var change:TextChangeInsert;
+			/*if (openingBracket) 
+			{
+				event.preventDefault();
+				change = new TextChangeInsert(
+					editor.model.selectedLineIndex,
+					editor.model.caretIndex,
+					Vector.<String>([")"])
+				);
+				editor.setCompletionData(editor.model.caretIndex, editor.model.caretIndex, "(", change);
+			}
+			else if (openingSingleQuote) 
+			{
+				event.preventDefault();
+				change = new TextChangeInsert(
+						editor.model.selectedLineIndex,
+						editor.model.caretIndex,
+						Vector.<String>(["'"])
+					);
+				editor.setCompletionData(editor.model.caretIndex, editor.model.caretIndex, "'", change);
+			}
+			else if (openingDoubleQuote) 
+			{
+				event.preventDefault();
+				change = new TextChangeInsert(
+					editor.model.selectedLineIndex,
+					editor.model.caretIndex,
+					Vector.<String>(['"'])
+				);
+				editor.setCompletionData(editor.model.caretIndex, editor.model.caretIndex, '"', change);
+			}
+			else */if (enterKey) 
+			{
+				var isCurlybracesOpened:Boolean;
+				var isQuotesOpened:Boolean;
+				var lineText:String = StringUtil.trim(editor.model.lines[editor.model.selectedLineIndex - 1].text);
+				if (lineText.charAt(lineText.length-1) == "{" && !editor.model.lines[editor.model.selectedLineIndex - 1].isQuoteTextOpen) isCurlybracesOpened = true;
+				else if (editor.model.lines[editor.model.selectedLineIndex - 1].isQuoteTextOpen) isQuotesOpened = true;
+				
+				// for curly braces	
+				if (isCurlybracesOpened)
+				{
+					// continue to next phase if only found an opened and non-closed
+					// curly braces
+					var openCount:int = text.match(/{/g).length;
+					var closeCount:int = text.match(/}/g).length;
+					if (openCount > closeCount)
+					{
+						//try to use the same indent as whatever follows
+						var regExp:RegExp = /^([ \t]*)\w/gm;
+						var matches:Array = null;
+						var newCaretPos:int;
+						var editorHasNextLine:Boolean;
+						var indent:String = "";
+						if (editor.model.selectedLineIndex < (editor.model.lines.length - 1))
+						{
+							editorHasNextLine = true;
+							matches = regExp.exec(editor.model.lines[editor.model.selectedLineIndex+1].text);
+							if (!matches) regExp.exec(editor.model.lines[editor.model.selectedLineIndex-1].text); 
+							if (matches) 
+							{
+								indent = matches[1];
+							}
+						}
+						
+						if (!matches) newCaretPos = editor.model.caretIndex;
+						
+						editor.setCompletionData(editor.model.caretIndex, editor.model.caretIndex, '\n');
+						editor.model.selectedLineIndex --;
+						change = new TextChangeInsert(
+							editorHasNextLine ? editor.model.selectedLineIndex+1 : editor.model.selectedLineIndex,
+							newCaretPos,
+							Vector.<String>([indent+"}"])
+						);
+						editor.setCompletionData(editor.model.caretIndex, editor.model.caretIndex, '\t', change);
+					}
+				}
+				
+				// for quotes
+				if (isQuotesOpened)
+				{
+					change = new TextChangeInsert(
+						editor.model.selectedLineIndex-1,
+						editor.model.lines[editor.model.selectedLineIndex-1].text.length,
+						Vector.<String>([editor.model.lines[editor.model.selectedLineIndex-1].lastQuoteText])
+					);
+					editor.setCompletionData(editor.model.caretIndex, editor.model.caretIndex, '+ '+ editor.model.lines[editor.model.selectedLineIndex-1].lastQuoteText, change);
+				}
+			}
 		}
-
+		
 		private function onMouseMove(event:MouseEvent):void
 		{
 			var globalXY:Point = new Point(event.stageX, event.stageY);

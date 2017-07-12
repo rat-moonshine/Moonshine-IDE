@@ -18,6 +18,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 package actionScripts.plugin.actionscript.as3project.vo
 {
+	import flash.events.Event;
+	
 	import __AS3__.vec.Vector;
 	
 	import actionScripts.factory.FileLocation;
@@ -37,6 +39,8 @@ package actionScripts.plugin.actionscript.as3project.vo
 	
 	public class AS3ProjectVO extends ProjectVO
 	{
+		public static const CHANGE_CUSTOM_SDK:String = "CHANGE_CUSTOM_SDK";
+		
 		public static const TEST_MOVIE_EXTERNAL_PLAYER:String = "ExternalPlayer";
 		public static const TEST_MOVIE_CUSTOM:String = "Custom";
 		public static const TEST_MOVIE_OPEN_DOCUMENT:String = "OpenDocument";
@@ -59,6 +63,7 @@ package actionScripts.plugin.actionscript.as3project.vo
 		public var assetLibrary:XMLList; // TODO Unknown if it works in FD, there just for compatibility purposes (<library/> tag)
 		public var targets:Vector.<FileLocation> = new Vector.<FileLocation>();
 		public var hiddenPaths:Vector.<FileLocation> = new Vector.<FileLocation>();
+		public var projectWithExistingSourcePaths:Vector.<FileLocation>;
 		public var showHiddenPaths:Boolean = false;
 		
 		public var prebuildCommands:String;
@@ -71,6 +76,7 @@ package actionScripts.plugin.actionscript.as3project.vo
 		public var testMovieCommand:String;
 		public var defaultBuildTargets:String;
 		public var isMobile:Boolean;
+		public var isProjectFromExistingSource:Boolean;
 		
 		public var config:MXMLCConfigVO;
 		
@@ -107,8 +113,13 @@ package actionScripts.plugin.actionscript.as3project.vo
 		
 		public function set customSDKPath(value:String):void
 		{
+			if(buildOptions.customSDKPath === value)
+			{
+				return;
+			}
 			buildOptions.customSDKPath = value;
 			swfOutput.swfVersion = SWFOutputVO.getSDKSWFVersion(value);
+			this.dispatchEvent(new Event(CHANGE_CUSTOM_SDK));
 		}
 		
 		public function get AntBuildPath():String

@@ -92,7 +92,7 @@ package actionScripts.impls
 		//
 		//--------------------------------------------------------------------------
 		
-		public function parseFlashDevelop(project:AS3ProjectVO=null, file:FileLocation=null):AS3ProjectVO
+		public function parseFlashDevelop(project:AS3ProjectVO=null, file:FileLocation=null, projectName:String=null):AS3ProjectVO
 		{
 			return FlashDevelopImporter.parse(project);
 		}

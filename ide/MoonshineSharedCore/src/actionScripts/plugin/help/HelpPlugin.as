@@ -37,7 +37,6 @@ package actionScripts.plugin.help
 	import actionScripts.valueObjects.ConstantsCoreVO;
 	
 	import components.popup.JavaPathSetupPopup;
-	import components.popup.MinSDKMissingAlert;
 	import components.popup.SDKUnzipConfirmPopup;
 	
 	public class HelpPlugin extends PluginBase implements IPlugin
@@ -45,12 +44,9 @@ package actionScripts.plugin.help
 		public static const EVENT_TOURDEFLEX:String = "EVENT_TOURDEFLEX";
 		public static const EVENT_AS3DOCS:String = "EVENT_AS3DOCS";
 		public static const EVENT_ABOUT:String = "EVENT_ABOUT";
-		public static const EVENT_SDK_UNZIP_REQUEST:String = "EVENT_SDK_UNZIP_REQUEST";
-		public static const EVENT_SDK_HELPER_DOWNLOAD_REQUEST:String = "EVENT_SDK_HELPER_DOWNLOAD_REQUEST";
 		public static const EVENT_CHECK_MINIMUM_SDK_REQUIREMENT:String = "EVENT_CHECK_MINIMUM_SDK_REQUIREMENT";
 		public static const EVENT_APACHE_SDK_DOWNLOADER_REQUEST:String = "EVENT_APACHE_SDK_DOWNLOADER_REQUEST";
 		public static const EVENT_ENSURE_JAVA_PATH:String = "EVENT_ENSURE_JAVA_PATH";
-		public static const EVENT_TYPEAHEAD_REQUIRES_SDK:String = "EVENT_TYPEAHEAD_REQUIRES_SDK";
 		
 		override public function get name():String			{ return "Help Plugin"; }
 		override public function get author():String		{ return "Moonshine Project Team"; }
@@ -59,7 +55,6 @@ package actionScripts.plugin.help
 		private var tourdeContentView: IPanelWindow;
 		private var idemodel:IDEModel = IDEModel.getInstance();
 		private var as3DocsPanel:IPanelWindow = new AS3DocsView();
-		private var minSDKRequirementAlert:MinSDKMissingAlert;
 		private var sdkUnzipView:SDKUnzipConfirmPopup;
 		private var javaPathDetection:JavaPathSetupPopup;
 		
@@ -71,19 +66,11 @@ package actionScripts.plugin.help
 			{
 				tourdeContentView = idemodel.flexCore.getTourDeView();
 				dispatcher.addEventListener(EVENT_TOURDEFLEX, handleTourDeFlexConfigure);
-				dispatcher.addEventListener(EVENT_CHECK_MINIMUM_SDK_REQUIREMENT, checkMinimumSDKPresence);
 			}
-			CONFIG::OSX
-				{
-					dispatcher.addEventListener(EVENT_SDK_UNZIP_REQUEST, onSDKUnzipRequest);
-					dispatcher.addEventListener(EVENT_SDK_HELPER_DOWNLOAD_REQUEST, onSDKhelperDownloadRequest);
-				}
 			
 			dispatcher.addEventListener(EVENT_ABOUT, handleAboutShow);
 			dispatcher.addEventListener(EVENT_AS3DOCS, handleAS3DocsShow);
 			dispatcher.addEventListener(CloseTabEvent.EVENT_TAB_CLOSED, handleTreeRefresh);
-			dispatcher.addEventListener(EVENT_ENSURE_JAVA_PATH, checkJavaPathPresenceForTypeahead);
-			dispatcher.addEventListener(EVENT_TYPEAHEAD_REQUIRES_SDK, onTypeaheadFailedDueToSDK);
 		}
 		
 		protected function handleTourDeFlexConfigure(event:Event):void
@@ -115,102 +102,9 @@ package actionScripts.plugin.help
 			);
 		}
 		
-		protected function onSDKUnzipRequest(event:Event):void
-		{
-			if (!sdkUnzipView)
-			{
-				triggerUnzipViewWIthParam(false, false);
-			}
-		}
-		
-		protected function onSDKhelperDownloadRequest(event:Event):void
-		{
-			if (!sdkUnzipView)
-			{
-				triggerUnzipViewWIthParam(true, false);
-			}
-		}
-		
-		protected function checkMinimumSDKPresence(event:Event):void
-		{
-			var requisiteSDKs:Object = SDKUtils.checkMoonshineRequisiteSDKAvailability();
-			if ((!requisiteSDKs.flex || !requisiteSDKs.flexjs) && !minSDKRequirementAlert && !sdkUnzipView)
-			{
-				triggerUnzipViewWIthParam(false, true);
-			}
-			else
-			{
-				checkJavaPathPresenceForTypeahead(null);
-			}
-		}
-		
-		private function onMinSDKAlertClose(event:Event):void
-		{
-			minSDKRequirementAlert.removeEventListener(Event.CLOSE, onMinSDKAlertClose);
-			FlexGlobals.topLevelApplication.removeElement(minSDKRequirementAlert);
-			minSDKRequirementAlert = null;
-		}
-		
 		private function handleTreeRefresh(event:CloseTabEvent):void
 		{
 			if (!event.tab || (event.tab is IPanelWindow)) Object(tourdeContentView).refresh();
-		}
-		
-		private function checkJavaPathPresenceForTypeahead(event:Event):void
-		{
-			if (!model.javaPathForTypeAhead && !javaPathDetection)
-			{
-				setTimeout(function():void
-				{
-					triggerJavaSetupViewWithParam(false);
-					
-				}, 1000);
-			}
-			else if (model.javaPathForTypeAhead)
-			{
-				// starting server
-				model.flexCore.startTypeAheadWithJavaPath(model.javaPathForTypeAhead.fileBridge.nativePath);
-			}
-		}
-		
-		private function onTypeaheadFailedDueToSDK(event:Event):void
-		{
-			triggerJavaSetupViewWithParam(true);
-		}
-		
-		private function triggerJavaSetupViewWithParam(showAsRequiresSDKNotif:Boolean):void
-		{
-			javaPathDetection = new JavaPathSetupPopup;
-			javaPathDetection.showAsRequiresSDKNotification = showAsRequiresSDKNotif;
-			javaPathDetection.horizontalCenter = javaPathDetection.verticalCenter = 0;
-			javaPathDetection.addEventListener(Event.CLOSE, onJavaPromptClosed, false, 0, true);
-			FlexGlobals.topLevelApplication.addElement(javaPathDetection);
-		}
-		
-		private function triggerUnzipViewWIthParam(showAsDownloader:Boolean, showAsRequiresSDKNotif:Boolean):void
-		{
-			sdkUnzipView = new SDKUnzipConfirmPopup;
-			sdkUnzipView.showAsHelperDownloader = showAsDownloader;
-			sdkUnzipView.showAsRequiresSDKNotification = showAsRequiresSDKNotif;
-			sdkUnzipView.horizontalCenter = sdkUnzipView.verticalCenter = 0;
-			if (showAsRequiresSDKNotif) sdkUnzipView.addEventListener(EVENT_APACHE_SDK_DOWNLOADER_REQUEST, onApacheSDKDownloader, false, 0, true);
-			sdkUnzipView.addEventListener(Event.CLOSE, onSDKUnzipPromptClosed, false, 0, true);
-			FlexGlobals.topLevelApplication.addElement(sdkUnzipView);
-		}
-		
-		private function onSDKUnzipPromptClosed(event:Event):void
-		{
-			sdkUnzipView.removeEventListener(EVENT_APACHE_SDK_DOWNLOADER_REQUEST, onApacheSDKDownloader);
-			sdkUnzipView.removeEventListener(Event.CLOSE, onSDKUnzipPromptClosed);
-			FlexGlobals.topLevelApplication.removeElement(sdkUnzipView);
-			sdkUnzipView = null;
-		}
-		
-		private function onJavaPromptClosed(event:Event):void
-		{
-			javaPathDetection.removeEventListener(Event.CLOSE, onJavaPromptClosed);
-			FlexGlobals.topLevelApplication.removeElement(javaPathDetection);
-			javaPathDetection = null;
 		}
 		
 		/**

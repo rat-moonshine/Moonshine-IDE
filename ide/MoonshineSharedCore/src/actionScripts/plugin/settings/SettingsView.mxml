@@ -67,6 +67,7 @@
 			public var defaultCancelLabel:String = "Cancel";
 			public var defaultCloseLabel:String = "Close";
 			public var currentRequestedSelectedItem:PluginSettingsWrapper;
+			public var isSaved:Boolean;
 			
 			private var currentSelectedItem:IHasSettings;
 			
@@ -99,7 +100,6 @@
 			
 			public function save():void
 			{
-				
 				// Iterate all settings we have & commit changed ones.
 				var settings:Vector.<SettingsWrapper> = getSettingsForAllCategories();
 				for each (var setting:SettingsWrapper in settings)
@@ -109,23 +109,61 @@
 						setting.commitChanges();
 					}
 				}
-					//Moon-106 fix: 
-				// checking if project path already exists
-				if (associatedData is AS3ProjectVO){
-				var fl:FileLocation = new FileLocation(associatedData.folderLocation.fileBridge.nativePath+"/"+associatedData.projectName);
-				if(!fl.fileBridge.exists)
+				
+				// when calls by default sdk save settings
+				if (!associatedData)
 				{
-				dispatchEvent( new Event(EVENT_SAVE) );
-				close(true);
-				}else{
-					Alert.show("This directory already exists. Please select a different path or project name.");
+					goSave();
 					return;
 				}
-				}else{
-					dispatchEvent( new Event(EVENT_SAVE) );
-					close(true);
+				
+				// Moon-106 fix: 
+				// @ modified devsena
+				// to determine if this a new project creation call and to check if 
+				// same named folder or same named project is not exists to given path 
+				// @ note
+				// a project's folder name can differ to it's named .as3proj file,
+				// also a Flash Builder project not suppose to have any .as3proj file as well;
+				// in that case project name contains in it's .project file
+				// 
+				// Since in either Flash Builder or Moonshine project type, Moonshine always saves
+				// it's saved data to .as3proj file only, we should check the .as3proj file existence first
+				var project:AS3ProjectVO = associatedData as AS3ProjectVO;
+				var projectFile:FileLocation = new FileLocation(project.folderLocation.fileBridge.nativePath + project.folderLocation.fileBridge.separator + project.name +".as3proj");
+				if (projectFile.fileBridge.exists)
+				{
+					goSave();
+				}
+				else
+				{
+					// this should be the case in new project creation when .as3proj file not exists
+					// or a same named project exists but it may not have .as3proj file - mainly when Flash Builder project
+					
+					// checking .project file existence and it's name in case of Flash Builder project
+					projectFile = new FileLocation(project.folderLocation.fileBridge.nativePath + project.folderLocation.fileBridge.separator + ".project");
+					if (projectFile.fileBridge.exists)
+					{
+						goSave();
+					}
+					else
+					{
+						// named folder existence check
+						projectFile = new FileLocation(project.folderLocation.fileBridge.nativePath + project.folderLocation.fileBridge.separator + project.name);
+						if (projectFile.fileBridge.exists) Alert.show("This directory already exists. Please select a different path or project name.", "Error!");
+						else if (project.isProjectFromExistingSource && !project.projectWithExistingSourcePaths) Alert.show("You'll need to select main source folder and main source file.", "Error!");
+						else goSave();
+					}
 				}
 				
+				/*
+				 *@private
+				 */
+				function goSave():void
+				{
+					dispatchEvent(new Event(EVENT_SAVE));
+					isSaved = true;
+					close(true);
+				}
 			}
 			
 			public var associatedData:*;

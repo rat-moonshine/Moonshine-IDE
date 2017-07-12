@@ -19,25 +19,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 package actionScripts.impls
 {
-
-	import actionScripts.plugins.problems.ProblemsPlugin;
-	import actionScripts.plugins.references.ReferencesPlugin;
-	import actionScripts.plugins.symbols.SymbolsPlugin;
-
 	import flash.desktop.NativeApplication;
 	import flash.display.DisplayObject;
-	import flash.events.Event;
 	import flash.filesystem.File;
-	import flash.net.SharedObject;
 	import flash.ui.Keyboard;
 	
 	import mx.controls.HTML;
 	import mx.core.IFlexDisplayObject;
 	import mx.core.IVisualElement;
 	
-	import actionScripts.events.AddTabEvent;
 	import actionScripts.events.ChangeLineEncodingEvent;
-	import actionScripts.events.GlobalEventDispatcher;
 	import actionScripts.events.NewProjectEvent;
 	import actionScripts.events.OpenFileEvent;
 	import actionScripts.events.ProjectEvent;
@@ -49,7 +40,6 @@ package actionScripts.impls
 	import actionScripts.plugin.actionscript.as3project.clean.CleanProject;
 	import actionScripts.plugin.actionscript.as3project.save.SaveFilesPlugin;
 	import actionScripts.plugin.actionscript.as3project.vo.AS3ProjectVO;
-	import actionScripts.plugin.actionscript.as3project.vo.SWFOutputVO;
 	import actionScripts.plugin.console.ConsolePlugin;
 	import actionScripts.plugin.core.compiler.CompilerEventBase;
 	import actionScripts.plugin.findreplace.FindReplacePlugin;
@@ -58,25 +48,18 @@ package actionScripts.impls
 	import actionScripts.plugin.project.ProjectPlugin;
 	import actionScripts.plugin.recentlyOpened.RecentlyOpenedPlugin;
 	import actionScripts.plugin.settings.SettingsPlugin;
-	import actionScripts.plugin.settings.SettingsView;
-	import actionScripts.plugin.settings.vo.ISetting;
-	import actionScripts.plugin.settings.vo.MultiOptionSetting;
-	import actionScripts.plugin.settings.vo.NameValuePair;
-	import actionScripts.plugin.settings.vo.PathSetting;
-	import actionScripts.plugin.settings.vo.SettingsWrapper;
-	import actionScripts.plugin.settings.vo.StaticLabelSetting;
-	import actionScripts.plugin.settings.vo.StringSetting;
 	import actionScripts.plugin.splashscreen.SplashScreenPlugin;
+	import actionScripts.plugin.startup.StartupHelperPlugin;
 	import actionScripts.plugin.syntax.AS3SyntaxPlugin;
 	import actionScripts.plugin.syntax.CSSSyntaxPlugin;
 	import actionScripts.plugin.syntax.HTMLSyntaxPlugin;
 	import actionScripts.plugin.syntax.JSSyntaxPlugin;
 	import actionScripts.plugin.syntax.MXMLSyntaxPlugin;
 	import actionScripts.plugin.syntax.XMLSyntaxPlugin;
-	import actionScripts.plugin.templating.TemplatingHelper;
 	import actionScripts.plugin.templating.TemplatingPlugin;
 	import actionScripts.plugins.ant.AntBuildPlugin;
 	import actionScripts.plugins.ant.AntBuildScreen;
+	import actionScripts.plugins.as3project.CreateProject;
 	import actionScripts.plugins.as3project.exporter.FlashBuilderExporter;
 	import actionScripts.plugins.as3project.exporter.FlashDevelopExporter;
 	import actionScripts.plugins.as3project.importer.FlashBuilderImporter;
@@ -86,8 +69,12 @@ package actionScripts.impls
 	import actionScripts.plugins.fdb.FDBPlugin;
 	import actionScripts.plugins.fdb.event.FDBEvent;
 	import actionScripts.plugins.help.view.TourDeFlexContentsView;
+	import actionScripts.plugins.problems.ProblemsPlugin;
+	import actionScripts.plugins.references.ReferencesPlugin;
+	import actionScripts.plugins.rename.RenamePlugin;
 	import actionScripts.plugins.svn.SVNPlugin;
 	import actionScripts.plugins.swflauncher.SWFLauncherPlugin;
+	import actionScripts.plugins.symbols.SymbolsPlugin;
 	import actionScripts.plugins.ui.editor.TourDeTextEditor;
 	import actionScripts.ui.IPanelWindow;
 	import actionScripts.ui.editor.BasicTextEditor;
@@ -109,12 +96,11 @@ package actionScripts.impls
 	
 	public class IFlexCoreBridgeImp implements IFlexCoreBridge
 	{
-		public var activeType:uint = AS3ProjectPlugin.AS3PROJ_AS_AIR;
+		public var newProjectSourcePaths:Vector.<FileLocation> = new Vector.<FileLocation>();
 		
-		private var isActionProject:Boolean;
-		private var templateLookup:Object = {};
-		private var cookie:SharedObject;
 		private var model:IDEModel = IDEModel.getInstance();
+		private var createProject:CreateProject;
+		
 		private var _folderPath:String;
 		
 		//--------------------------------------------------------------------------
@@ -123,9 +109,9 @@ package actionScripts.impls
 		//
 		//--------------------------------------------------------------------------
 		
-		public function parseFlashDevelop(project:AS3ProjectVO=null, file:FileLocation=null):AS3ProjectVO
+		public function parseFlashDevelop(project:AS3ProjectVO=null, file:FileLocation=null, projectName:String=null):AS3ProjectVO
 		{
-			return FlashDevelopImporter.parse(file);
+			return FlashDevelopImporter.parse(file, projectName);
 		}
 		
 		public function parseFlashBuilder(file:FileLocation):AS3ProjectVO
@@ -157,68 +143,7 @@ package actionScripts.impls
 		
 		public function createAS3Project(event:NewProjectEvent):void
 		{
-			cookie = SharedObject.getLocal("moonshine-ide-local");
-			//Read recent project path from shared object
-			
-			// Only template for those we can handle
-			if (event.projectFileEnding != "as3proj") return;
-			
-			var project:AS3ProjectVO = FlashDevelopImporter.parse(event.settingsFile);
-			// remove any ( or ) stuff
-			var tempName: String = event.templateDir.fileBridge.name.substr(0, event.templateDir.fileBridge.name.indexOf("("));
-			if (event.templateDir.fileBridge.name.indexOf("FlexJS") != -1) project.projectName = "NewFlexJSBrowserProject";
-			else project.projectName = "New"+tempName;
-			
-			if (cookie.data.hasOwnProperty('recentProjectPath')){
-				model.recentSaveProjectPath.source = cookie.data.recentProjectPath;
-				project.folderLocation = new FileLocation(model.recentSaveProjectPath.source[0]);
-			}
-			else{
-				project.folderLocation = new FileLocation(File.documentsDirectory.nativePath);
-				model.recentSaveProjectPath.addItem(project.folderLocation.fileBridge.nativePath);
-			}
-			
-			var settingsView:SettingsView = new SettingsView();
-			settingsView.Width = 150;
-			settingsView.defaultSaveLabel = "Create";
-			
-			settingsView.addCategory("");
-			// Remove spaces from project name
-			project.projectName = project.projectName.replace(/ /g, "");
-			
-			var nvps:Vector.<NameValuePair> = Vector.<NameValuePair>([
-				new NameValuePair("AIR", AS3ProjectPlugin.AS3PROJ_AS_AIR),
-				new NameValuePair("Web", AS3ProjectPlugin.AS3PROJ_AS_WEB)
-			]);
-			
-			var settings:SettingsWrapper = new SettingsWrapper("Name & Location", Vector.<ISetting>([
-				new StaticLabelSetting('New '+ event.templateDir.fileBridge.name),
-				new StringSetting(project, 'projectName', 'Project Name', 'a-zA-Z0-9._'), // No space input either plx
-				new PathSetting(project, 'folderPath', 'Project Directory', true, null, false, true)
-			]));
-			
-			if (event.templateDir.fileBridge.name.indexOf("Actionscript Project") != -1)
-			{
-				isActionProject = true;
-				settings.getSettingsList().push(new MultiOptionSetting(this, "activeType", "Select Project Type", nvps));
-			}
-			else
-			{
-				isActionProject = false;
-			}
-
-			settingsView.addEventListener(SettingsView.EVENT_SAVE, createSave);
-			settingsView.addEventListener(SettingsView.EVENT_CLOSE, createClose);
-			settingsView.addSetting(settings, "");
-			
-			settingsView.label = "New Project";
-			settingsView.associatedData = project;
-			
-			GlobalEventDispatcher.getInstance().dispatchEvent(
-				new AddTabEvent(settingsView)
-			);
-			
-			templateLookup[project] = event.templateDir;
+			createProject = new CreateProject(event);
 		}
 		
 		public function deleteProject(projectWrapper:FileWrapper, finishHandler:Function):void
@@ -293,12 +218,14 @@ package actionScripts.impls
 				ProblemsPlugin,
 				SymbolsPlugin,
 				ReferencesPlugin,
+				StartupHelperPlugin,
+				RenamePlugin
 			];
 		}
 		
 		public function getPluginsNotToShowInSettings():Array
 		{
-			return [ProjectPlugin, HelpPlugin, FindReplacePlugin, RecentlyOpenedPlugin, SWFLauncherPlugin, AS3ProjectPlugin, CleanProject, FDBPlugin, MXMLCJavaScriptPlugin, ProblemsPlugin, SymbolsPlugin, ReferencesPlugin,];
+			return [ProjectPlugin, HelpPlugin, FindReplacePlugin, RecentlyOpenedPlugin, SWFLauncherPlugin, AS3ProjectPlugin, CleanProject, FDBPlugin, MXMLCJavaScriptPlugin, ProblemsPlugin, SymbolsPlugin, ReferencesPlugin, StartupHelperPlugin, RenamePlugin];
 		}
 		
 		public function getQuitMenuItem():MenuItem
@@ -352,7 +279,8 @@ package actionScripts.impls
 					new MenuItem(null),
 					new MenuItem("Find Resource", null, FindReplacePlugin.EVENT_FIND_RESOURCE,
 						'r', [Keyboard.COMMAND, Keyboard.SHIFT],
-						'r', [Keyboard.CONTROL, Keyboard.SHIFT])
+						'r', [Keyboard.CONTROL, Keyboard.SHIFT]),
+					new MenuItem('Rename symbol', null, RenamePlugin.EVENT_OPEN_RENAME_VIEW),
 				]),
 				new MenuItem("View", [
 					new MenuItem('Project view', null, ProjectEvent.SHOW_PROJECT_VIEW),
@@ -424,7 +352,7 @@ package actionScripts.impls
 						{
 							firstMenuItems.splice(i+1, 0, (new MenuItem(null)));
 							firstMenuItems.splice(i+2, 0, (new MenuItem("Access Manager", null, ProjectEvent.ACCESS_MANAGER)));
-							firstMenuItems.splice(i+3, 0, (new MenuItem(ConstantsCoreVO.IS_BUNDLED_SDK_PRESENT ? "Extract Bundled SDK" : "Moonshine Helper Application", null, ConstantsCoreVO.IS_BUNDLED_SDK_PRESENT ? HelpPlugin.EVENT_SDK_UNZIP_REQUEST : HelpPlugin.EVENT_SDK_HELPER_DOWNLOAD_REQUEST)));
+							firstMenuItems.splice(i+3, 0, (new MenuItem(ConstantsCoreVO.IS_BUNDLED_SDK_PRESENT ? "Extract Bundled SDK" : "Moonshine Helper Application", null, ConstantsCoreVO.IS_BUNDLED_SDK_PRESENT ? StartupHelperPlugin.EVENT_SDK_UNZIP_REQUEST : StartupHelperPlugin.EVENT_SDK_HELPER_DOWNLOAD_REQUEST)));
 							break;
 						}
 					}
@@ -500,166 +428,5 @@ package actionScripts.impls
 			
 			return appVersion;
 		}
-		
-		//--------------------------------------------------------------------------
-		//
-		//  PRIVATE LISTENERS
-		//
-		//--------------------------------------------------------------------------
-		
-		private function createClose(event:Event):void
-		{
-			var settings:SettingsView = event.target as SettingsView;
-			
-			settings.removeEventListener(SettingsView.EVENT_CLOSE, createClose);
-			settings.removeEventListener(SettingsView.EVENT_SAVE, createSave);
-			
-			delete templateLookup[settings.associatedData];
-			
-			GlobalEventDispatcher.getInstance().dispatchEvent(
-				new CloseTabEvent(CloseTabEvent.EVENT_CLOSE_TAB, event.target as DisplayObject)
-			);
-		}
-		
-		private function createSave(event:Event):void
-		{
-			var view:SettingsView = event.target as SettingsView;
-			var pvo:AS3ProjectVO = view.associatedData as AS3ProjectVO;
-			var templateDir:FileLocation = templateLookup[pvo];
-			var projectName:String = pvo.projectName;
-			var targetFolder:FileLocation = pvo.folderLocation;
-				
-			var comparePath:Boolean=false;
-
-			//save  project path in shared object
-			cookie = SharedObject.getLocal("moonshine-ide-local");
-			if(!cookie.data.hasOwnProperty("recentProjectPath"))
-				cookie.data.recentProjectPath = new Array();
-
-			//Avoid to add duplicate entry in shared object
-			for(var i:int=0;i<cookie.data.recentProjectPath.length;i++)
-			{
-				if(cookie.data.recentProjectPath[i]==targetFolder.fileBridge.nativePath)
-				{
-					swap(0,i,cookie.data.recentProjectPath);
-					comparePath = true;
-					break;
-				}
-			}
-			if(!comparePath)
-				cookie.data.recentProjectPath.splice(0,0,targetFolder.fileBridge.nativePath);
-			
-			
-			var movieVersion:String = "10.0";
-			// lets load the target flash/air player version
-			// since swf and air player both versioning same now,
-			// we can load anyone's config file
-			movieVersion = SWFOutputVO.getSDKSWFVersion().toString()+".0";
-			
-			// Create project root directory
-			targetFolder = targetFolder.resolvePath(projectName);
-			targetFolder.fileBridge.createDirectory();
-			
-			// Time to do the templating thing!
-			var th:TemplatingHelper = new TemplatingHelper();
-			th.templatingData["$ProjectName"] = projectName;
-			
-			var pattern:RegExp = new RegExp(/(_)/g);
-			th.templatingData["$ProjectID"] = projectName.replace(pattern, "");
-			th.templatingData["$ProjectSWF"] = projectName+".swf";
-			th.templatingData["$ProjectFile"] = projectName+(isActionProject ? ".as" : ".mxml");
-			th.templatingData["$DesktopDescriptor"] = projectName+"-app.xml";
-			th.templatingData["$Settings"] = projectName;
-			th.templatingData["$Certificate"] = projectName+"Certificate";
-			th.templatingData["$Password"] = projectName+"Certificate";
-			th.templatingData["$FlexHome"] = (IDEModel.getInstance().defaultSDK) ? IDEModel.getInstance().defaultSDK.fileBridge.nativePath : "";
-			th.templatingData["$MovieVersion"] = movieVersion;
-			th.projectTemplate(templateDir, targetFolder);
-
-			// If this an ActionScript Project then we need to copy selective file/folders for web or desktop
-			var descriptorFile:FileLocation;
-			if (isActionProject)
-			{
-				if (activeType == AS3ProjectPlugin.AS3PROJ_AS_AIR)
-				{
-					// build folder modification
-					th.projectTemplate(templateDir.resolvePath("build_air"), targetFolder.resolvePath("build"));
-					descriptorFile = targetFolder.resolvePath("build/"+projectName+"-app.xml");
-					try
-					{
-						descriptorFile.fileBridge.moveTo(targetFolder.resolvePath("src/"+projectName+"-app.xml"), true);
-					}
-					catch(e:Error)
-					{
-						descriptorFile.fileBridge.moveToAsync(targetFolder.resolvePath("src/"+projectName+"-app.xml"), true);
-					}
-				}
-				else
-				{
-					th.projectTemplate(templateDir.resolvePath("build_web"), targetFolder.resolvePath("build"));
-					th.projectTemplate(templateDir.resolvePath("bin-debug_web"), targetFolder.resolvePath("bin-debug"));
-				}
-				
-				// we also needs to delete unnecessary folders
-				var folderToDelete1:FileLocation = targetFolder.resolvePath("build_air");
-				var folderToDelete2:FileLocation = targetFolder.resolvePath("build_web");
-				var folderToDelete3:FileLocation = targetFolder.resolvePath("bin-debug_web");
-				try
-				{
-					folderToDelete1.fileBridge.deleteDirectory(true);
-					folderToDelete2.fileBridge.deleteDirectory(true);
-					folderToDelete3.fileBridge.deleteDirectory(true);
-				} catch (e:Error)
-				{
-					folderToDelete1.fileBridge.deleteDirectoryAsync(true);
-					folderToDelete2.fileBridge.deleteDirectoryAsync(true);
-					folderToDelete3.fileBridge.deleteDirectoryAsync(true);
-				}
-			}
-			
-			// creating certificate conditional checks
-			if (!descriptorFile || !descriptorFile.fileBridge.exists)
-			{
-				descriptorFile = targetFolder.resolvePath("application.xml");
-				if (!descriptorFile.fileBridge.exists)
-				{
-					descriptorFile = targetFolder.resolvePath("src/"+projectName+"-app.xml");
-				}
-			}
-			
-			if (descriptorFile.fileBridge.exists)
-			{
-				// lets update $SWFVersion with SWF version now
-				var stringOutput:String = descriptorFile.fileBridge.read() as String;
-				var firstNamespaceQuote:int = stringOutput.indexOf('"', stringOutput.indexOf("<application xmlns=")) + 1;
-				var lastNamespaceQuote:int = stringOutput.indexOf('"', firstNamespaceQuote);
-				var currentAIRNamespaceVersion:String = stringOutput.substring(firstNamespaceQuote, lastNamespaceQuote);
-				
-				stringOutput = stringOutput.replace(currentAIRNamespaceVersion, "http://ns.adobe.com/air/application/"+ movieVersion);
-				descriptorFile.fileBridge.save(stringOutput);
-			}
-			
-			// Figure out which one is the settings file
-			var settingsFile:FileLocation = targetFolder.resolvePath(projectName+".as3proj");
-			
-			// Set some stuff to get the paths right
-			pvo = FlashDevelopImporter.parse(settingsFile);
-			pvo.projectName = projectName;
-
-			// Write settings
-			FlashDevelopExporter.export(pvo, settingsFile); 
-			
-			GlobalEventDispatcher.getInstance().dispatchEvent(
-				new ProjectEvent(ProjectEvent.ADD_PROJECT, pvo)
-			);
-
-			// Close settings view
-			createClose(event);
-			// Open main file for editing
-			GlobalEventDispatcher.getInstance().dispatchEvent( 
-				new OpenFileEvent(OpenFileEvent.OPEN_FILE, pvo.targets[0])
-			);
-			
-		}		
 	}
 }

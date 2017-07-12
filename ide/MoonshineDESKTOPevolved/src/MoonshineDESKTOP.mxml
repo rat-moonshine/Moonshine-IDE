@@ -23,7 +23,7 @@
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx"
-					   minHeight="768" minWidth="1024"
+					   height="768" minWidth="1024" applicationDPI="120"
 					  preinitialize="onPreinit(event)" initialize="onInitialized()" creationComplete="onComplete()" addedToStage="onAddedToStage(event)" xmlns:containers="components.containers.*" closing="onApplicationClosing(event)" xmlns:nativeApplicationUpdater="actionScripts.extResources.riaspace.nativeApplicationUpdater.*">
 	<fx:Metadata>
 		[ResourceBundle("resources")]
@@ -233,9 +233,15 @@
 			 */
 			private function initStage(e:Event):void
 			{
-				//this.stage.nativeWindow.maximize(); 
-				stage.nativeWindow.x = (Capabilities.screenResolutionX - stage.nativeWindow.width)/2;
-				stage.nativeWindow.y = (Capabilities.screenResolutionY - stage.nativeWindow.height)/2;
+				//this.stage.nativeWindow.maximize();
+				if (Screen.mainScreen.bounds.height >= 768 && Screen.mainScreen.bounds.height <= 800)
+				{
+					// subtract the taskbar height
+					stage.nativeWindow.height = Screen.mainScreen.visibleBounds.height;
+				}
+				
+				stage.nativeWindow.x = (Screen.mainScreen.visibleBounds.width - stage.nativeWindow.width)/2;
+				stage.nativeWindow.y = (Screen.mainScreen.visibleBounds.height - stage.nativeWindow.height)/2;
 				removeEventListener(Event.ADDED_TO_STAGE, initStage);
 				ConsoleUtil.setKeyStroke([117]);
 				stage.addChild(ConsoleUtil.getInstance());

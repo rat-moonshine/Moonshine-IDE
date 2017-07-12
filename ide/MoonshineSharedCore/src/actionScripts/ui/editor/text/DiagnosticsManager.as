@@ -1,5 +1,6 @@
 package actionScripts.ui.editor.text
 {
+	import actionScripts.utils.TextUtil;
 	import actionScripts.valueObjects.Diagnostic;
 	import actionScripts.valueObjects.Position;
 	import actionScripts.valueObjects.Range;
@@ -9,7 +10,6 @@ package actionScripts.ui.editor.text
 
 	public class DiagnosticsManager
 	{
-		private static const NON_WORD_CHARACTERS:Vector.<String> = new <String>[" ", ".", ":", ";", "\t", ",", "(", ")", "[", "]", "{", "}"];
 		private static const TOOL_TIP_ID:String = "DiagnosticsManagerToolTip";
 		
 		protected var editor:TextEditor;
@@ -62,22 +62,9 @@ package actionScripts.ui.editor.text
 					//default to the end of the line, since we might not
 					//find a character that ends the word
 					line = lines[startLine];
-					var lineText:String = line.text;
-					endChar = lineText.length;
-					for(var j:int = startChar + 1; j < endChar; j++)
-					{
-						var char:String = lineText.charAt(j);
-						if(NON_WORD_CHARACTERS.indexOf(char) !== -1)
-						{
-							//include the previous character, but not this
-							//one, because it's not part of the word
-							endChar = j - 1;
-							break;
-						}
-					}
 					//update the end character so that it matches what is
 					//displayed in the UI
-					end.character = endChar;
+					end.character = TextUtil.endOfWord(line.text, startChar);
 				}
 
 				line = lines[startLine];

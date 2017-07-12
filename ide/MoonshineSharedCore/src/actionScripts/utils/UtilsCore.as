@@ -18,6 +18,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 package actionScripts.utils
 {
+	import flash.display.DisplayObject;
+	import flash.events.Event;
+	import flash.geom.Point;
+	
+	import mx.collections.ArrayCollection;
+	import mx.core.FlexGlobals;
+	import mx.core.UIComponent;
+	import mx.events.CloseEvent;
+	import mx.events.ToolTipEvent;
+	import mx.managers.PopUpManager;
+	
 	import actionScripts.events.ProjectEvent;
 	import actionScripts.factory.FileLocation;
 	import actionScripts.locator.IDEModel;
@@ -36,17 +47,6 @@ package actionScripts.utils
 	import components.popup.SDKSelectorPopup;
 	import components.popup.UnsaveFileMessagePopup;
 	import components.renderers.CustomToolTipGBA;
-	
-	import flash.display.DisplayObject;
-	import flash.events.Event;
-	import flash.geom.Point;
-	
-	import mx.collections.ArrayCollection;
-	import mx.core.FlexGlobals;
-	import mx.core.UIComponent;
-	import mx.events.CloseEvent;
-	import mx.events.ToolTipEvent;
-	import mx.managers.PopUpManager;
 
 	public class UtilsCore 
 	{
@@ -239,6 +239,14 @@ package actionScripts.utils
 			}
 			
 			return null;
+		}
+		
+		/**
+		 * Returns the probable SDK against a project
+		 */
+		public static function getCurrentSDK(pvo:AS3ProjectVO):Object 
+		{
+			return pvo.buildOptions.customSDK ? pvo.buildOptions.customSDK.fileBridge.getFile : (IDEModel.getInstance().defaultSDK ? IDEModel.getInstance().defaultSDK.fileBridge.getFile : null);
 		}
 		
 		/**
@@ -477,6 +485,93 @@ package actionScripts.utils
 				sdkPopup = null;
 			}
 		}
-	  
+		
+		/**
+		 * Checks if code-completion requisite FlexJS 
+		 * available or not and returns
+		 */
+		public static function checkCodeCompletionFlexJSSDK():String
+		{
+			var hasFlex:Boolean = false;
+			var model:IDEModel = IDEModel.getInstance();
+			var FLEXJS_NAME_PREFIX:String = "Apache Flex (FlexJS) ";
+			
+			var path:String;
+			var bestVersionValue:int = 0;
+			for each (var i:ProjectReferenceVO in model.userSavedSDKs)
+			{
+				var sdkName:String = i.name;
+				if (sdkName.indexOf(FLEXJS_NAME_PREFIX) != -1)
+				{
+					var sdkVersion:String = sdkName.substr(FLEXJS_NAME_PREFIX.length, sdkName.indexOf(" ", FLEXJS_NAME_PREFIX.length) - FLEXJS_NAME_PREFIX.length);
+					var versionParts:Array = sdkVersion.split("-")[0].split(".");
+					var major:int = 0;
+					var minor:int = 0;
+					var revision:int = 0;
+					if (versionParts.length >= 3)
+					{
+						major = parseInt(versionParts[0], 10);
+						minor = parseInt(versionParts[1], 10);
+						revision = parseInt(versionParts[2], 10);
+					}
+					//FlexJS 0.7.0 is the minimum version supported by the
+					//language server. this may change in the future.
+					if (major > 0 || minor >= 7)
+					{
+						//convert the three parts of the version number
+						//into a single value to compare to other versions.
+						var currentValue:int = major * 1e6 + minor * 1000 + revision;
+						if(bestVersionValue < currentValue)
+						{
+							//pick the newest available version of FlexJS
+							//to power the language server.
+							hasFlex = true;
+							path = i.path;
+							bestVersionValue = currentValue;
+							model.isCodeCompletionJavaPresent = true;
+						}
+					}
+				}
+			}
+			
+			return path;
+		}
+		
+		/**
+		 * Returns BOOL if version is newer than
+		 * given version
+		 * 
+		 * Basically requires for FlexJS version check where
+		 * 0.8.0 added new compiler argument which do not works
+		 * in older versions
+		 */
+		public static function isNewerVersionSDKThan(olderVersion:int, sdkName:String):Boolean
+		{
+			if (!sdkName) return false;
+			
+			var FLEXJS_NAME_PREFIX:String = "Apache Flex (FlexJS) ";
+			
+			if (sdkName.indexOf(FLEXJS_NAME_PREFIX) != -1)
+			{
+				var sdkVersion:String = sdkName.substr(FLEXJS_NAME_PREFIX.length, sdkName.indexOf(" ", FLEXJS_NAME_PREFIX.length) - FLEXJS_NAME_PREFIX.length);
+				var versionParts:Array = sdkVersion.split("-")[0].split(".");
+				var major:int = 0;
+				var minor:int = 0;
+				var revision:int = 0;
+				if (versionParts.length >= 3)
+				{
+					major = parseInt(versionParts[0], 10);
+					minor = parseInt(versionParts[1], 10);
+					revision = parseInt(versionParts[2], 10);
+				}
+				
+				if (major > 0 || minor > olderVersion)
+				{
+					return true;
+				}
+			}
+			
+			return false;
+		}
 	}
 }

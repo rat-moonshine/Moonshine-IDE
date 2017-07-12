@@ -163,8 +163,8 @@ package actionScripts.plugins.swflauncher
 			// Guesstimate app-xml name
 			var rootPath:String = File(project.folderLocation.fileBridge.getFile).getRelativePath(file.parent);
 			var descriptorName:String = project.swfOutput.path.fileBridge.name.split(".")[0] +"-app.xml";
-			var appXML:String = "src/"+ descriptorName;
-			var descriptorFile:File = project.folderLocation.fileBridge.resolvePath(appXML).fileBridge.getFile as File;
+			var appXML:String = project.classpaths[0].fileBridge.nativePath + File.separator + descriptorName;
+			var descriptorFile:File = new File(appXML);
 			
 			// in case /src/app-xml present update to bin-debug folder
 			if (descriptorFile.exists)

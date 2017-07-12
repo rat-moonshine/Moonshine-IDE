@@ -37,6 +37,7 @@
 			import spark.utils.TextFlowUtil;
 			
 			import actionScripts.events.GlobalEventDispatcher;
+			import actionScripts.events.SettingsEvent;
 			import actionScripts.locator.IDEModel;
 			import actionScripts.plugin.help.HelpPlugin;
 			import actionScripts.utils.SDKUtils;
@@ -45,11 +46,12 @@
 			[Bindable] public var showAsHelperDownloader:Boolean;
 			
 			public var showAsRequiresSDKNotification:Boolean;
+			public var isSDKSetupSectionOpened:Boolean;
 			
 			[Bindable] private var userNotes:String;
 			
 			private var unzipperNotes:String = "This is the Moonshine IDE Complete (App Store) release. The IDE requires the Apache Flex® SDK to be un-zipped to enable you to later compile the source code you write in the IDE. This is a one-time operation. Please click Confirm to proceed.";
-			private var helperDownloaderNotes:String = "In order to compile your project, Moonshine needs the Apache Flex® and FlexJS® SDKs, as well as Apache Ant.\n\nDue to Apple sandbox, your SDK location needs to be in your 'Downloads' folder. Use Moonshine App Store Helper 2.0 to automatically install the required versions.";
+			private var helperDownloaderNotes:String = "In order to compile your project, Moonshine needs the Apache Flex® or FlexJS® SDKs, as well as Apache Ant.\n\nDue to Apple sandbox, your SDK location needs to be in your 'Downloads' folder. Use Moonshine App Store Helper 2.1.0 to automatically install the required versions.";
 			private var model:IDEModel = IDEModel.getInstance();
 			
 			private function addCloseButton():void
@@ -108,7 +110,9 @@
 				}
 				else 
 				{
-					dispatchEvent(new Event(HelpPlugin.EVENT_APACHE_SDK_DOWNLOADER_REQUEST));
+					//dispatchEvent(new Event(HelpPlugin.EVENT_APACHE_SDK_DOWNLOADER_REQUEST));
+					GlobalEventDispatcher.getInstance().dispatchEvent(new SettingsEvent(SettingsEvent.EVENT_OPEN_SETTINGS, "actionScripts.plugins.as3project.mxmlc::MXMLCPlugin"));
+					isSDKSetupSectionOpened = true;
 					removeListeners();
 					dispatchEvent(new Event(Event.CLOSE));
 				}
@@ -124,7 +128,6 @@
 			{
 				if (event) event.target.removeEventListener(MouseEvent.CLICK, closeButtonClicked);
 				removeListeners();
-				GlobalEventDispatcher.getInstance().dispatchEvent(new Event(HelpPlugin.EVENT_ENSURE_JAVA_PATH));
 				dispatchEvent(new Event(Event.CLOSE));
 			}
 			
@@ -228,7 +231,7 @@
 				else if (showAsRequiresSDKNotification) 
 				{
 					currentState = "requiresSDKNotification";
-					var markup:String = ConstantsCoreVO.IS_MACOS ? '<p>Moonshine requires Apache FlexJS 0.7.0 SDK to work properly. Due to Apple sandbox, your SDK location needs to be in your <span fontWeight="bold">Downloads</span> folder.<br/><br/>To automatically download and setup click on Download button.</p>' : '<p>Moonshine requires Apache FlexJS 0.7.0 SDK to work properly.<br/><br/>To automatically download and setup click on Download button.</p>';
+					var markup:String = ConstantsCoreVO.IS_MACOS ? '<p>Moonshine requires Apache FlexJS 0.7.0+ SDK to work properly. Due to Apple sandbox, your SDK location needs to be in your <span fontWeight="bold">Downloads</span> folder.<br/><br/>To automatically download and setup click on Download button.</p>' : '<p>Moonshine requires Apache FlexJS 0.7.0 SDK to work properly.<br/><br/>To automatically download and setup click on Download button.</p>';
 					var flow:TextFlow = TextFlowUtil.importFromString(markup);
 					callLater(function():void
 					{
@@ -283,7 +286,7 @@
 			</s:VGroup>
 			<s:VGroup width="100%" autoLayout="true" paddingRight="20"
 					  includeIn="permissionRequestOSX">
-				<s:Label text="Moonshine can optionally be configured to compile your Apache Flex® and FlexJS® projects. Would you like to enable this feature now?"
+				<s:Label text="{ConstantsCoreVO.IS_MACOS ? 'Moonshine can optionally be configured to compile your Apache Flex® and FlexJS® projects. Would you like to enable this feature now?' : 'Moonshine can be configured to compile your Apache Flex® and FlexJS® projects. Would you like to setup or download Flex® or FlexJS® SDK to enable this feature?'}"
 						 maxDisplayedLines="5" width="100%" fontSize="13"/>
 			</s:VGroup>
 			<s:VGroup width="100%" autoLayout="true" paddingRight="20"

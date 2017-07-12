@@ -47,7 +47,7 @@ package actionScripts.valueObjects
 		public var fileNamesOnly:Vector.<String>;
 		public var classFilesInProject: ArrayCollection;
 		
-		[Bindable] private var _projectFolder: FileWrapper;
+		private var _projectFolder: FileWrapper;
 		
 		private var loader: DataAgent;
 		private var projectConfigurationFile: FileWrapper;
@@ -81,10 +81,14 @@ package actionScripts.valueObjects
 			}
 		}
 		
-		public function get projectFolder():FileWrapper
+		[Bindable] public function get projectFolder():FileWrapper
 		{
-			if (ConstantsCoreVO.IS_AIR && !_projectFolder) _projectFolder = new FileWrapper(folderLocation, true, projectReference);
+			if (ConstantsCoreVO.IS_AIR && (!_projectFolder || _projectFolder.file.fileBridge.nativePath != folderLocation.fileBridge.nativePath)) _projectFolder = new FileWrapper(folderLocation, true, projectReference, shallUpdateToTreeView);
 			return _projectFolder;
+		}
+		public function set projectFolder(value:FileWrapper):void
+		{
+			_projectFolder = value;
 		}
 		
 		public function get name():String 

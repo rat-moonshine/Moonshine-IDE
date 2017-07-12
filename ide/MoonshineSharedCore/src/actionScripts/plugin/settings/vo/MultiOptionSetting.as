@@ -20,13 +20,19 @@ package actionScripts.plugin.settings.vo
 {
 	import mx.core.IVisualElement;
 	
+	import spark.filters.BlurFilter;
+	
 	import actionScripts.plugin.settings.renderers.MultiOptionRenderer;
 
 	public class MultiOptionSetting extends StringSetting
 	{
+		private var _options:Vector.<NameValuePair>;
+		private var _value:Object;
+		private var _isEditable:Boolean;
 		
-		private var _options:Vector.<NameValuePair>
-		private var _value:Object
+		private var rdr:MultiOptionRenderer;
+		private var myBlurFilter:BlurFilter = new BlurFilter();
+		
 		public function MultiOptionSetting(provider:Object, name:String, label:String,options:Vector.<NameValuePair>)
 		{
 			super(provider,name,label);
@@ -44,11 +50,24 @@ package actionScripts.plugin.settings.vo
 		
 		override public function get renderer():IVisualElement
 		{
-			
-			var rdr:MultiOptionRenderer = new MultiOptionRenderer();
+			rdr = new MultiOptionRenderer();
 			rdr.options = _options;
 			rdr.setting = this;			
 			return rdr;
+		}
+		
+		override public function set isEditable(value:Boolean):void
+		{
+			_isEditable = value;
+			if (rdr) 
+			{
+				rdr.mouseChildren = _isEditable;
+				//rdr.filters = _isEditable ? [] : [myBlurFilter];
+			}
+		}
+		override public function get isEditable():Boolean
+		{
+			return _isEditable;
 		}
 	}
 }

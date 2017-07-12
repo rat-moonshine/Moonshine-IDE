@@ -31,6 +31,7 @@ package actionScripts.events
 		public static const EVENT_ANT_BIN_URL_SET:String = "EVENT_ANT_BIN_URL_SET";
 		public static const EVENT_FILE_RENAMED:String = "EVENT_FILE_RENAMED";
 		public static const EVENT_PROJECT_SELECTED:String = "EVENT_PROJECT_SELECTED";
+		public static const EVENT_FILE_SELECTED:String = "EVENT_FILE_SELECTED";
 		
 		public var filePath:String;
 		public var fileName:String;

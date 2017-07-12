@@ -19,7 +19,7 @@
 package actionScripts.ui.editor.text
 {
 	import actionScripts.events.OpenFileEvent;
-
+	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.KeyboardEvent;
@@ -47,7 +47,7 @@ package actionScripts.ui.editor.text
 	public class SelectionManager
 	{
 		protected var dispatcher:EventDispatcher = GlobalEventDispatcher.getInstance();
-
+		
 		private static const SCROLL_THRESHOLD:int = 10;
 		private static const SCROLL_INTERVAL:int = 60;
 		
@@ -80,7 +80,7 @@ package actionScripts.ui.editor.text
 			editor.itemContainer.addEventListener(MouseEvent.MOUSE_MOVE, updateCursor);
 			editor.itemContainer.addEventListener(MouseEvent.MOUSE_OUT, resetCursor);
 		}
-
+		
 		private function handleMouseDown(event:MouseEvent):void
 		{
 			var stagePoint:Point = new Point(event.stageX, event.stageY);
@@ -192,6 +192,7 @@ package actionScripts.ui.editor.text
 			editor.stage.removeEventListener(MouseEvent.MOUSE_MOVE, handleMouseMove);
 			editor.stage.removeEventListener(MouseEvent.MOUSE_UP, handleMouseUp);
 			editor.removeEventListener(LayoutEvent.LAYOUT, handleEditorLayout);
+			dispatcher.removeEventListener(OpenFileEvent.OPEN_FILE, handleOpenFile);
 			
 			dragStartLine = -1;
 			dragEndChar = -1;
@@ -342,7 +343,7 @@ package actionScripts.ui.editor.text
 						model.selectionStartCharIndex = 0;
 						model.caretIndex = model.selectedLine.text.length;						
 					}
-					 
+					
 					break;
 				}
 				case Keyboard.LEFT:
@@ -502,7 +503,7 @@ package actionScripts.ui.editor.text
 					else
 					{
 						model.selectedLineIndex = Math.max(model.selectedLineIndex - model.renderersNeeded, 0);
-					
+						
 						editor.scrollTo(model.scrollPosition - model.renderersNeeded);
 					}
 					
@@ -583,7 +584,7 @@ package actionScripts.ui.editor.text
 		private function applyChangeInsert(change:TextChangeInsert):void
 		{
 			var textLines:Vector.<String> = change.textLines;
-
+			
 			if (textLines && textLines.length)
 			{
 				// Set caret to the end of the text change
@@ -615,7 +616,7 @@ package actionScripts.ui.editor.text
 		{
 			var selLine:Number = model.selectionStartLineIndex;
 			var caretIndex:Number = model.selectionStartCharIndex;
-							
+			
 			model.selectedLineIndex = selLine;
 			model.caretIndex = caretIndex;
 		}

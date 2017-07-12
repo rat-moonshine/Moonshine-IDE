@@ -36,6 +36,7 @@
 			
 			import actionScripts.events.FilePluginEvent;
 			import actionScripts.events.GlobalEventDispatcher;
+			import actionScripts.events.SettingsEvent;
 			import actionScripts.factory.FileLocation;
 			import actionScripts.locator.IDEModel;
 			import actionScripts.utils.UtilsCore;
@@ -46,6 +47,8 @@
 			[Bindable] public var showAsHelperDownloader:Boolean;
 			
 			public var showAsRequiresSDKNotification:Boolean;
+			public var isSDKSetupShowing:Boolean;
+			public var isDiscarded:Boolean;
 			
 			[Bindable] private var userNotes:String;
 			[Bindable] private var autoDetectedJavaPath:String;
@@ -55,7 +58,7 @@
 			
 			private function addCloseButton():void
 			{
-				if (ConstantsCoreVO.IS_OSX_JAVA_SDK_PROMPT) onPermittedOSX();
+				if (showAsRequiresSDKNotification) onPermittedOSX();
 				
 				var closeButtonUIC:UIComponent = new UIComponent();
 				closeButtonUIC.width = closeButtonUIC.height = 27;
@@ -80,7 +83,7 @@
 				closeButton.graphics.drawRect(0, 0, 27, 25);
 				closeButton.graphics.endFill();
 				
-				closeButton.addEventListener(MouseEvent.CLICK, closeButtonClicked, false, 0, true);
+				closeButton.addEventListener(MouseEvent.CLICK, closeButtonClickedRequest, false, 0, true);
 				closeButtonUIC.addChild(closeButton);
 				
 				addElement(closeButtonUIC);
@@ -91,7 +94,7 @@
 				// when opend as required SDK not present window
 				if (showAsRequiresSDKNotification)
 				{
-					var flow:TextFlow = TextFlowUtil.importFromString("<p>Code completion requires Apache FlexJS® SDK 0.7.0.<br/><br/>Make sure you have it defined in SDK list by clicking on <span fontWeight='bold'>Fix Now</span> button. In case of MacOS, your SDK location needs to be in your <span fontWeight='bold'>Downloads</span> folder.</p>");
+					var flow:TextFlow = TextFlowUtil.importFromString("<p>Code completion requires Apache Flex® or FlexJS® SDK.<br/><br/>Make sure you have it defined in SDK list by clicking on <span fontWeight='bold'>Fix Now</span> button. In case of MacOS, your SDK location needs to be in your <span fontWeight='bold'>Downloads</span> folder.</p>");
 					currentState = "noRequiredSDK";
 					body.alpha = 1;
 					callLater(function():void
@@ -117,8 +120,14 @@
 				prepareNotifications();
 			}
 			
-			private function closeButtonClicked(event:MouseEvent):void
+			private function closeButtonClickedRequest(event:MouseEvent):void
 			{
+				closeButtonClicked(event, true);
+			}
+			
+			private function closeButtonClicked(event:MouseEvent, isDiscarded:Boolean=false):void
+			{
+				this.isDiscarded = isDiscarded;
 				if (event) event.target.removeEventListener(MouseEvent.CLICK, closeButtonClicked);
 				dispatchEvent(new Event(Event.CLOSE));
 			}
@@ -132,10 +141,8 @@
 			protected function onJavaDirectorySelected(dir:Object):void
 			{
 				model.javaPathForTypeAhead = (dir is FileLocation) ? dir as FileLocation : new FileLocation(dir.nativePath);
-				// starting server
-				model.flexCore.startTypeAheadWithJavaPath(model.javaPathForTypeAhead.fileBridge.nativePath);
-				// saving path to use next time Moonshine starts
 				GlobalEventDispatcher.getInstance().dispatchEvent(new FilePluginEvent(FilePluginEvent.EVENT_JAVA_TYPEAHEAD_PATH_SAVE, model.javaPathForTypeAhead));
+				
 				// close this
 				closeButtonClicked(null);
 			}
@@ -147,7 +154,11 @@
 			
 			protected function fixRequiredSDK(event:MouseEvent):void
 			{
-				UtilsCore.sdkSelection();
+				GlobalEventDispatcher.getInstance().dispatchEvent(new SettingsEvent(SettingsEvent.EVENT_OPEN_SETTINGS, "actionScripts.plugins.as3project.mxmlc::MXMLCPlugin"));
+				isSDKSetupShowing = true;
+				
+				// close this
+				closeButtonClicked(null, true);
 			}
 			
 			private function onJavaPathDetectedInOSX(path:String):void
@@ -288,13 +299,13 @@
 							  click="onAllowAccess(event)"
 							  includeIn="default"/>
 					<s:Button label="Skip For Now" styleName="darkButton"
-							  click="closeButtonClicked(null)"
+							  click="closeButtonClicked(null, true)"
 							  includeIn="default"/>
 					<s:Button label="Fix Now" styleName="darkButton"
 							  includeIn="noRequiredSDK"
 							  click="fixRequiredSDK(event)"/>
 					<s:Button label="Continue Without Code Completion" styleName="darkButton"
-							  click="closeButtonClicked(event)"
+							  click="closeButtonClicked(event, true)"
 							  includeIn="noRequiredSDK"/>
 				</mx:HBox>
 				<mx:HBox autoLayout="true"
@@ -302,7 +313,7 @@
 					<s:Button label="Configure &amp; Enable" styleName="darkButton"
 							  click="onPermittedOSX()"/>
 					<s:Button label="No Thanks" styleName="darkButton"
-							  click="closeButtonClicked(event)"/>
+							  click="closeButtonClicked(event, true)"/>
 				</mx:HBox>
 			</mx:HBox>
 		</s:VGroup>

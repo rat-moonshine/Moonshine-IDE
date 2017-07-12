@@ -19,11 +19,10 @@
     <classEntry path="elements.skins.SparkTextAreaTransparentBG"/>
     <classEntry path="actionScripts.utils.SDKUtils"/>
     <classEntry path="components.popup.SDKUnzipConfirmPopup"/>
-    <classEntry path="elements.skins.StandardPopupSkin"/>
     <classEntry path="components.renderers.FileTypeRenderer"/>
     <classEntry path="components.renderers.DividerRenderer"/>
     <classEntry path="actionScripts.utils.DataDescriptorForCustomTree"/>
-    <classEntry path="components.popup.MinSDKMissingAlert"/>
+    <classEntry path="actionScripts.plugin.startup.StartupHelperPlugin"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

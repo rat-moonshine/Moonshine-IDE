@@ -67,10 +67,6 @@
 			
 			import flashx.textLayout.events.FlowElementMouseEvent;
 			
-			[Bindable] public var fileTemplateCollection:ArrayCollection;
-			[Bindable] public var projectTemplateCollection:ArrayCollection;
-			[Bindable] public var projectOpenCollection:ArrayCollection;
-			
 			public var plugin: SplashScreenPlugin;
 			
 			[Bindable] private var model:IDEModel = IDEModel.getInstance();
@@ -105,7 +101,8 @@
 			
 			public function setProjectTemplates(value:ArrayCollection):void
 			{
-				projectTemplateCollection = new ArrayCollection();
+				var projectTemplateCollection:ArrayCollection = new ArrayCollection();
+				var feathersProjectTemplates:ArrayCollection = new ArrayCollection();
 				for each (var i:FileLocation in value)
 				{ 	
 					var tmpDescripFile: Object = i.fileBridge.getFile.parent.resolvePath(i.fileBridge.name+".txt");
@@ -116,14 +113,16 @@
 						template.title = i.fileBridge.name ;
 						template.file = i;
 						var tmpImageFile: Object = i.fileBridge.getFile.parent.resolvePath(i.fileBridge.name+".png");
-						if(tmpImageFile.exists)
-							template.logoImagePath = tmpImageFile.url;
 						template.description = String(tmpDescripFileLocation.fileBridge.read());
-						projectTemplateCollection.addItem(template);
+						if (tmpImageFile.exists) template.logoImagePath = tmpImageFile.url;
+						
+						if (template.title.indexOf("Feathers") == -1) projectTemplateCollection.addItem(template);
+						else feathersProjectTemplates.addItem(template);
 					}
 				}
 				
 				ConstantsCoreVO.TEMPLATES_PROJECTS = projectTemplateCollection;
+				ConstantsCoreVO.TEMPLATES_PROJECTS_SPECIALS = feathersProjectTemplates;
 			}
 			
 			private function loadRecentProject():void
@@ -191,6 +190,7 @@
 				// desktop
 				if (ConstantsCoreVO.IS_AIR)
 				{
+					var projectName:String = rdr.data.name;
 					recentOpenedProjectObject = new FileLocation(rdr.data.path);
 					if (recentOpenedProjectObject.fileBridge.isDirectory)
 					{
@@ -229,7 +229,7 @@
 								flashDevelopProjectFile = model.flexCore.testFlashDevelop(recentOpenedProjectObject.fileBridge.getFile);
 								if (flashDevelopProjectFile) 
 								{
-									p = model.flexCore.parseFlashDevelop(null, flashDevelopProjectFile);
+									p = model.flexCore.parseFlashDevelop(null, flashDevelopProjectFile, projectName);
 									break;
 								}
 								else if (model.flexCore.testFlashBuilder(recentOpenedProjectObject.fileBridge.getFile)) p = model.flexCore.parseFlashBuilder(recentOpenedProjectObject as FileLocation);
@@ -238,7 +238,7 @@
 							case ProjectEvent.LAST_OPENED_AS_FD_PROJECT:
 							{
 								flashDevelopProjectFile = model.flexCore.testFlashDevelop(recentOpenedProjectObject.fileBridge.getFile)
-								if (flashDevelopProjectFile) p = model.flexCore.parseFlashDevelop(null, flashDevelopProjectFile);
+								if (flashDevelopProjectFile) p = model.flexCore.parseFlashDevelop(null, flashDevelopProjectFile, projectName);
 								else if (model.flexCore.testFlashBuilder(recentOpenedProjectObject.fileBridge.getFile)) p = model.flexCore.parseFlashBuilder(recentOpenedProjectObject as FileLocation);
 								break;
 							}
@@ -445,7 +445,7 @@
 				if (!isSDKAvailable && !isNoSDKMessageShown)
 				{
 					tmpMove = new Move(grpNoSDKMess);
-					tmpMove.yFrom = height;
+					tmpMove.yFrom = this.height;
 					tmpMove.yTo = height - grpNoSDKMess.height;
 					grpNoSDKMess.visible = true;
 					isNoSDKMessageShown = true;
@@ -520,6 +520,28 @@
 					 itemRenderer="components.renderers.TemplateItemRenderer"
 					 color="0xFFFFFF" width="100%"
 					 creationComplete="projectTemplateList.addEventListener('itemClick', handleTemplateClick)">
+			<s:layout>
+				<s:VerticalLayout
+					gap="10" 
+					clipAndEnableScrolling="false" />
+			</s:layout>
+		</s:DataGroup>
+		<s:Label 
+			text="MORE"
+			color="0XD6D6D6"
+			paddingTop="3"
+			paddingLeft="3"
+			paddingRight="3"
+			paddingBottom="0"
+			fontFamily="DejaVuSerif"
+			fontStyle="italic"
+			fontSize="18"
+			/>
+		<s:DataGroup id="projectTemplateListMore"
+					 dataProvider="{ConstantsCoreVO.TEMPLATES_PROJECTS_SPECIALS}"
+					 itemRenderer="components.renderers.TemplateItemRenderer"
+					 color="0xFFFFFF" width="100%"
+					 creationComplete="projectTemplateListMore.addEventListener('itemClick', handleTemplateClick)">
 			<s:layout>
 				<s:VerticalLayout
 					gap="10" 

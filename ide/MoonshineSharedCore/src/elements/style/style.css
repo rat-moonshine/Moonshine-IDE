@@ -272,3 +272,39 @@ mx|ScrollBar.black
 	thumb-hline1: #444444;
 	thumb-hline2: #777777;
 }
+
+.debugStopButton
+{
+	skinClass: ClassReference("elements.skins.DarkIconButtonSkin");
+	icon: Embed("/elements/images/debug-stop-icon.png");
+}
+
+.debugPlayButton
+{
+	skinClass: ClassReference("elements.skins.DarkIconButtonSkin");
+	icon: Embed("/elements/images/debug-play-icon.png");
+}
+
+.debugPauseButton
+{
+	skinClass: ClassReference("elements.skins.DarkIconButtonSkin");
+	icon: Embed("/elements/images/debug-pause-icon.png");
+}
+
+.debugStepIntoButton
+{
+	skinClass: ClassReference("elements.skins.DarkIconButtonSkin");
+	icon: Embed("/elements/images/debug-step-into-icon.png");
+}
+
+.debugStepOverButton
+{
+	skinClass: ClassReference("elements.skins.DarkIconButtonSkin");
+	icon: Embed("/elements/images/debug-step-over-icon.png");
+}
+
+.debugStepOutButton
+{
+	skinClass: ClassReference("elements.skins.DarkIconButtonSkin");
+	icon: Embed("/elements/images/debug-step-out-icon.png");
+}

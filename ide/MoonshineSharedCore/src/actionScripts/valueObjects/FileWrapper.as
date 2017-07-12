@@ -35,12 +35,18 @@ package actionScripts.valueObjects
 		protected var _sourceController:ISourceControlProvider;
 		protected var _shallUpdateChildren: Boolean;
 		
+		public function set shallUpdateChildren(value:Boolean):void {	_shallUpdateChildren = value;	}
+		public function get shallUpdateChildren():Boolean {	return _shallUpdateChildren;	}
+		
 		public function FileWrapper(file:FileLocation, isRoot:Boolean=false, projectRef:ProjectReferenceVO=null, shallUpdateChildren:Boolean=true)
 		{
 			_file = file;
 			_isRoot = isRoot;
 			_shallUpdateChildren = shallUpdateChildren;
 			projectReference = projectRef;
+			
+			if (isRoot && projectRef && projectRef.name) name = projectRef.name;
+			else if (file) name = file.fileBridge.name;
 			
 			// store filelocation reference for later
 			// search through Find Resource menu option
@@ -66,7 +72,7 @@ package actionScripts.valueObjects
 			{
 				if (!c[i].isHidden)
 				{
-					fw = new FileWrapper(new FileLocation(c[i].nativePath), false, projectReference);
+					fw = new FileWrapper(new FileLocation(c[i].nativePath), false, projectReference, _shallUpdateChildren);
 					fw.sourceController = _sourceController;
 					_children.push(fw);
 				}
@@ -99,8 +105,14 @@ package actionScripts.valueObjects
 		
 		public function get name():String
 		{
-			if (file && _shallUpdateChildren) return file.fileBridge.name;
+			if (isRoot && _defaultName) return _defaultName;
+			else if (file && _shallUpdateChildren) return file.fileBridge.name;
+			else if (!_defaultName && projectReference) return projectReference.name;
 			else return _defaultName;
+		}
+		public function set name(value:String):void
+		{
+			_defaultName = value;
 		}
 		
 		public function get defaultName():String

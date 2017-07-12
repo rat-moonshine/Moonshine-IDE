@@ -30,9 +30,9 @@
 	paddingBottom="15"
 	creationComplete="onCreationCompletes(event)"
 	removedFromStage="onRemovedFromStage(event)">
-		
 	<fx:Script>
 		<![CDATA[
+			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.core.FlexGlobals;
 			import mx.core.IFlexDisplayObject;
@@ -42,12 +42,16 @@
 			import mx.events.FlexEvent;
 			import mx.events.MenuEvent;
 			import mx.managers.PopUpManager;
+			import mx.utils.ObjectUtil;
 			
 			import spark.components.VGroup;
 			import spark.events.IndexChangeEvent;
 			
 			import actionScripts.events.AddTabEvent;
+			import actionScripts.events.FileChangeEvent;
+			import actionScripts.events.GeneralEvent;
 			import actionScripts.events.GlobalEventDispatcher;
+			import actionScripts.events.NewFileEvent;
 			import actionScripts.events.ProjectEvent;
 			import actionScripts.factory.FileLocation;
 			import actionScripts.locator.IDEModel;
@@ -70,6 +74,8 @@
 			[Bindable] public var isDropDown:Boolean;
 			
 			[Bindable] private var model:IDEModel = IDEModel.getInstance();
+			[Bindable] private var historyPaths:ArrayCollection;
+			
 			private var file:FileLocation;
 			private var sdkPopup:SDKSelectorPopup;
 			private var sdkPathPopup:SDKDefinePopup;
@@ -146,8 +152,11 @@
 			{
 				//openFileCancelled(event);
 				setting.stringValue = (fileDir is FileLocation) ? file.fileBridge.nativePath : fileDir.nativePath;
-				txtPath.textInput.text = setting.stringValue;
+				historyPaths.addItem(setting.stringValue);
+				cmbPath.selectedItem = setting.stringValue;
 				file = null;
+				
+				setting.dispatchEvent(new Event(PathSetting.PATH_SELECTED));
 			}
 			
 			private function openFileCancelled():void
@@ -174,10 +183,19 @@
 						if (isFound.status == SDKUtils.BUNDLED) lblValue.text += " (Bundled)";
 					}
 				}
-				if(isDropDown)
+				else
 				{
-					txtPath.textInput.editable=false;
-					txtPath.setStyle("contentBackgroundColor","#FFFFFF");
+					historyPaths = ObjectUtil.copy(model.recentSaveProjectPath) as ArrayCollection;
+					cmbPath.callLater(function():void
+					{
+						cmbPath.selectedItem = setting.provider[setting.name];
+					});
+				}
+				
+				if (isDropDown)
+				{
+					cmbPath.textInput.editable=false;
+					cmbPath.setStyle("contentBackgroundColor","#FFFFFF");
 				}
 			}
 			
@@ -275,7 +293,7 @@
 			private function onPathDropdown() : void {
 				/* pathMenu = ScrollableMenu.createMenu( this, model.recentSaveProjectPath, false );
 				pathMenu.variableRowHeight = true;
-				pathMenu.width = txtPath.width;
+				pathMenu.width = cmbPath.width;
 				pathMenu.height = this.height;
 				var p:Point = new Point(this.parent.x,this.parent.y);
 				var p1:Point = localToGlobal(p);
@@ -286,19 +304,13 @@
 			
 			private function onPathSelected( event:MenuEvent ) : void {
 				setting.stringValue = event.label;
-				txtPath.selectedItem = event.label;
+				cmbPath.selectedItem = event.label;
 			}
 			
-			protected function txtPath_changeHandler(event:IndexChangeEvent):void
+			protected function cmbPath_changeHandler(event:IndexChangeEvent):void
 			{
 				// TODO Auto-generated method stub
-				setting.stringValue = txtPath.selectedItem;
-			}
-			
-			protected function txtPath_creationCompleteHandler(event:FlexEvent):void
-			{
-				// TODO Auto-generated method stub
-				//if(setting.label=="Balsamiq File") setting.stringValue = "";
+				setting.stringValue = cmbPath.selectedItem;
 			}
 			
 			protected function onRemovedFromStage(event:Event):void
@@ -338,9 +350,9 @@
 			styleName="uiTextSettingsValue"
 			paddingTop="10" width="98%"
 			text="{setting.stringValue? setting.stringValue : 'Not Set' }" visible="{!isDropDown}" includeInLayout="{!isDropDown}"  />
-		<s:ComboBox  width="100%" dataProvider="{model.recentSaveProjectPath}" id="txtPath" visible="{isDropDown}" 
+		<s:ComboBox  width="100%" dataProvider="{historyPaths}" id="cmbPath" visible="{isDropDown}" 
 					 alternatingItemColors="[#FFFFFF, #FFFFFF]"  selectionColor="#cccccc" rollOverColor="#eeeeee"
-					 includeInLayout="{isDropDown}" selectedIndex="0" change="txtPath_changeHandler(event)" creationComplete="txtPath_creationCompleteHandler(event)" />
+					 includeInLayout="{isDropDown}" change="cmbPath_changeHandler(event)"/>
 		<!--<mx:Button width="23" height="24" upSkin="@Embed('/elements/images/btnDropDown_UP.png')" overSkin="@Embed('/elements/images/btnDropDown_UP.png')"
 				   downSkin="@Embed('/elements/images/btnDropDown_DOWN.png')"  focusAlpha="0" 
 				   click="onPathDropdown()" id="btn_ProjectPath" visible="{isDropDown}" includeInLayout="{isDropDown}" />-->

@@ -20,11 +20,17 @@ package actionScripts.plugin.settings.vo
 {
 	import mx.core.IVisualElement;
 	
+	import spark.filters.BlurFilter;
+	
 	import actionScripts.plugin.settings.renderers.StringRenderer;
 	
 	public class StringSetting extends AbstractSetting
 	{
 		private var restrict:String;
+		private var rdr:StringRenderer;
+		private var myBlurFilter:BlurFilter = new BlurFilter();
+		
+		private var _isEditable:Boolean;
 		
 		public function StringSetting(provider:Object, name:String, label:String, restrict:String=null)
 		{
@@ -38,12 +44,25 @@ package actionScripts.plugin.settings.vo
 		
 		override public function get renderer():IVisualElement
 		{
-			var rdr:StringRenderer = new StringRenderer();
+			rdr = new StringRenderer();
 			if (restrict) rdr.text.restrict = restrict;
 			//rdr.text.setStyle("backgroundColor","")
 			rdr.setting = this;
 			return rdr;
 		}
 		
+		public function set isEditable(value:Boolean):void
+		{
+			_isEditable = value;
+			if (rdr) 
+			{
+				rdr.mouseChildren = _isEditable;
+				//rdr.filters = _isEditable ? [] : [myBlurFilter];
+			}
+		}
+		public function get isEditable():Boolean
+		{
+			return _isEditable;
+		}
 	}
 }

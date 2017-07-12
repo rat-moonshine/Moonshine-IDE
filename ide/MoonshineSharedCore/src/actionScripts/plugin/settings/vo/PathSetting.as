@@ -18,17 +18,26 @@
 ////////////////////////////////////////////////////////////////////////////////
 package actionScripts.plugin.settings.vo
 {
-	import actionScripts.plugin.settings.renderers.PathRenderer;
-	
 	import mx.core.IVisualElement;
 	
+	import spark.filters.BlurFilter;
+	
+	import actionScripts.plugin.settings.renderers.PathRenderer;
+	
+	[Event(name="PATH_SELECTED", type="flash.events.Event")]
 	public class PathSetting extends AbstractSetting
 	{
+		public static const PATH_SELECTED:String = "PATH_SELECTED";
+		
 		[Bindable]
 		public var directory:Boolean;
 		
 		private var isSDKPath:Boolean;
 		private var isDropDown:Boolean
+		private var rdr:PathRenderer;
+		private var myBlurFilter:BlurFilter = new BlurFilter();
+		
+		private var _isEditable:Boolean;
 		
 		public function PathSetting(provider:Object, name:String, label:String, directory:Boolean, path:String=null, isSDKPath:Boolean=false, isDropDown:Boolean = false)
 		{
@@ -44,12 +53,25 @@ package actionScripts.plugin.settings.vo
 		
 		override public function get renderer():IVisualElement
 		{
-			var rdr:PathRenderer = new PathRenderer();
+			rdr = new PathRenderer();
 			rdr.setting = this;
 			rdr.isSDKPath = isSDKPath;
 			rdr.isDropDown = isDropDown;
 			return rdr;
 		}
 		
+		public function set isEditable(value:Boolean):void
+		{
+			_isEditable = value;
+			if (rdr) 
+			{
+				rdr.mouseChildren = _isEditable;
+				//rdr.filters = _isEditable ? [] : [myBlurFilter];
+			}
+		}
+		public function get isEditable():Boolean
+		{
+			return _isEditable;
+		}
 	}
 }

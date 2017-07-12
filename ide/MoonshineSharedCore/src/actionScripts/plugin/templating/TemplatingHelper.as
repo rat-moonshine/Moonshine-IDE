@@ -21,13 +21,12 @@ package actionScripts.plugin.templating
 	import actionScripts.factory.FileLocation;
 	import actionScripts.utils.TextUtil;
 	import actionScripts.valueObjects.ConstantsCoreVO;
-	
-	import mx.controls.Alert;
 
 	public class TemplatingHelper
 	{
 		// Replace values for templates {$ProjectName:"My New Project"}
 		public var templatingData:Object = {};
+		public var isProjectFromExistingSource:Boolean;
 		
 		public function fileTemplate(fromTemplate:FileLocation, toFile:FileLocation):void
 		{
@@ -54,13 +53,17 @@ package actionScripts.plugin.templating
 				file = new FileLocation(file.nativePath);
 				if (FileLocation(file).fileBridge.isDirectory)
 				{
-					if (ConstantsCoreVO.IS_AIR)
+					// do not copy stocked 'src' folder if user choose to create a project with his/her existing source
+					if (!isProjectFromExistingSource || (isProjectFromExistingSource && FileLocation(file).fileBridge.name != "src"))
 					{
-						newFile = toDir.resolvePath(templatedFileName(file as FileLocation));
-						newFile.fileBridge.createDirectory();
+						if (ConstantsCoreVO.IS_AIR)
+						{
+							newFile = toDir.resolvePath(templatedFileName(file as FileLocation));
+							newFile.fileBridge.createDirectory();
+						}
+						
+						copyFiles(file as FileLocation, newFile);
 					}
-					
-					copyFiles(file as FileLocation, newFile);
 				}
 				else
 				{

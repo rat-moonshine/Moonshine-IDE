@@ -65,35 +65,6 @@ package actionScripts.plugin.splashscreen
 				showSplashScreen();
 			}
 			
-			setTimeout(function():void
-			{
-				// state change of menus based upon default SDK presence
-				dispatcher.dispatchEvent(new Event(MenuPlugin.CHANGE_MENU_SDK_STATE));
-			}, 1000);
-			
-			if(!model.defaultSDK && ConstantsCoreVO.IS_AIR && (!ConstantsCoreVO.IS_BUNDLED_SDK_PRESENT || ConstantsCoreVO.IS_BUNDLED_SDK_PROMPT_DNS) && (!CONFIG::OSX || ConstantsCoreVO.IS_SDK_HELPER_PROMPT_DNS))
-			{
-				setTimeout(function():void
-				{
-					model.noSDKNotifier.notifyNoFlexSDK();
-				}, 1000);
-			}
-			else if (model.defaultSDK && ConstantsCoreVO.IS_AIR && (!ConstantsCoreVO.IS_BUNDLED_SDK_PRESENT || ConstantsCoreVO.IS_BUNDLED_SDK_PROMPT_DNS) && (!CONFIG::OSX || !ConstantsCoreVO.IS_SDK_HELPER_PROMPT_DNS))
-			{
-				setTimeout(function():void
-				{
-					GlobalEventDispatcher.getInstance().dispatchEvent(new Event(HelpPlugin.EVENT_CHECK_MINIMUM_SDK_REQUIREMENT));
-				}, 1000);
-			}
-			else
-			{
-				// this is supposed to be trigger in case of OSX
-				setTimeout(function():void
-				{
-					SDKUtils.openSDKUnzipPrompt();
-				}, 2000);
-			}
-			
 			dispatcher.addEventListener(EVENT_SHOW_SPLASH, handleShowSplash);
 			dispatcher.addEventListener(CloseTabEvent.EVENT_ALL_TABS_CLOSED, handleShowSplash);
 		}
@@ -147,7 +118,7 @@ package actionScripts.plugin.splashscreen
 			{
 				var event:RequestTemplatesEvent = new RequestTemplatesEvent();
 				dispatcher.dispatchEvent(event);
-				splashScreen.fileTemplateCollection = new ArrayCollection(event.fileTemplates);
+				//splashScreen.fileTemplateCollection = new ArrayCollection(event.fileTemplates);
 				splashScreen.setProjectTemplates(new ArrayCollection(event.projectTemplates));	
 			}
 		}

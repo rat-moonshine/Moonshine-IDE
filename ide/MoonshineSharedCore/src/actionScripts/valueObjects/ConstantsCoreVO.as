@@ -59,6 +59,7 @@ package actionScripts.valueObjects
 		public static var TEMPLATE_MXML: FileLocation;
 		public static var TEMPLATES_FILES: ArrayCollection;
 		public static var TEMPLATES_PROJECTS: ArrayCollection;
+		public static var TEMPLATES_PROJECTS_SPECIALS:ArrayCollection;
 		public static var TEMPLATES_MXML_COMPONENTS:ArrayCollection = new ArrayCollection();
 		public static var TEMPLATES_OPEN_PROJECTS: ArrayCollection;
 		public static var ACTIONSCRIPT_PROJECT:FileLocation;

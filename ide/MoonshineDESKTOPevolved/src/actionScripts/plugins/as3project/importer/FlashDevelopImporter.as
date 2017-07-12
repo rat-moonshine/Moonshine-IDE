@@ -41,23 +41,37 @@ package actionScripts.plugins.as3project.importer
 			return null;
 		}
 		
-		public static function parse(file:FileLocation):AS3ProjectVO
+		public static function parse(file:FileLocation, projectName:String=null, descriptorFile:File=null, shallUpdateChildren:Boolean=true):AS3ProjectVO
 		{
 			var folder:File = (file.fileBridge.getFile as File).parent;
 			
-			var p:AS3ProjectVO = new AS3ProjectVO(new FileLocation(folder.nativePath));
+			var p:AS3ProjectVO = new AS3ProjectVO(new FileLocation(folder.nativePath), projectName, shallUpdateChildren);
 			p.projectFile = file;
 			
 			p.projectName = file.fileBridge.name.substring(0, file.fileBridge.name.lastIndexOf("."));
 			p.config = new MXMLCConfigVO(new FileLocation(folder.resolvePath("obj/"+p.projectName+"Config.xml").nativePath));
+			p.projectFolder.name = p.projectName;
 			
-			var descriptorFile:File = folder.resolvePath("application.xml");
+			if (!descriptorFile) descriptorFile = folder.resolvePath("application.xml");
 			if (!descriptorFile.exists)
 			{
 				descriptorFile = folder.resolvePath("src/"+p.projectName+"-app.xml");
 				if (!descriptorFile.exists)
 				{
-					descriptorFile = folder.resolvePath(p.projectName+".template");
+					var projectConfig:File = folder.resolvePath("obj/"+p.projectName+"Config.xml");
+					if (projectConfig.exists)
+					{
+						stream = new FileStream();
+						stream.open(projectConfig, FileMode.READ);
+						var configData:XML = XML(stream.readUTFBytes(projectConfig.size).toString());
+						stream.close();
+						
+						projectConfig = new File(configData["file-specs"]["path-element"]);
+						projectConfig = projectConfig.parent;
+						descriptorFile = projectConfig.resolvePath(p.projectName+"-app.xml");
+					}
+					
+					//descriptorFile = folder.resolvePath(p.projectName+".template");
 				}
 			}
 			var stream:FileStream;
@@ -94,8 +108,8 @@ package actionScripts.plugins.as3project.importer
 			p.buildOptions.parse(data.build);
 			p.swfOutput.parse(data.output, p);
 			
-			parsePaths(data.classpaths["class"], p.classpaths, p);
-			parsePaths(data.moonshineResourcePaths["class"], p.resourcePaths, p);
+			parsePaths(data.classpaths["class"], p.classpaths, p, "path", p.buildOptions.customSDKPath);
+			parsePaths(data.moonshineResourcePaths["class"], p.resourcePaths, p, "path", p.buildOptions.customSDKPath);
 			if (!p.buildOptions.additional) p.buildOptions.additional = "";
 			if (isAIR && (p.buildOptions.additional.indexOf("configname") == -1))
 			{
@@ -103,15 +117,15 @@ package actionScripts.plugins.as3project.importer
 				else p.buildOptions.additional += " +configname=air";
 			}
 			
-			parsePaths(data.includeLibraries.element, p.includeLibraries, p);
-			parsePaths(data.libraryPaths.element, p.libraries, p);
-			parsePaths(data.externalLibraryPaths.element, p.externalLibraries, p);
-			parsePaths(data.rslPaths.element, p.runtimeSharedLibraries, p);
+			parsePaths(data.includeLibraries.element, p.includeLibraries, p, "path", p.buildOptions.customSDKPath);
+			parsePaths(data.libraryPaths.element, p.libraries, p, "path", p.buildOptions.customSDKPath);
+			parsePaths(data.externalLibraryPaths.element, p.externalLibraries, p, "path", p.buildOptions.customSDKPath);
+			parsePaths(data.rslPaths.element, p.runtimeSharedLibraries, p, "path", p.buildOptions.customSDKPath);
 
 			p.assetLibrary = data.library;
-			parsePaths(data.intrinsics.element, p.intrinsicLibraries, p);
-			parsePaths(data.compileTargets.compile, p.targets, p);
-			parsePaths(data.hiddenPaths.hidden, p.hiddenPaths, p);
+			parsePaths(data.intrinsics.element, p.intrinsicLibraries, p, "path", p.buildOptions.customSDKPath);
+			parsePaths(data.compileTargets.compile, p.targets, p, "path", p.buildOptions.customSDKPath);
+			parsePaths(data.hiddenPaths.hidden, p.hiddenPaths, p, "path", p.buildOptions.customSDKPath);
 
 			p.prebuildCommands = UtilsCore.deserializeString(data.preBuildCommand);
 			p.postbuildCommands = UtilsCore.deserializeString(data.postBuildCommand);

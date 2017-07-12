@@ -4,7 +4,7 @@
   <output>
     <movie outputType="Application" />
     <movie input="" />
-    <movie path="bin-debug/$ProjectName.swf" />
+    <movie path="bin-debug/$ProjectSWF" />
     <movie fps="30" />
     <movie width="480" />
     <movie height="762" />
@@ -15,7 +15,7 @@
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
-    <class path="src" />
+    <class path="$SourcePath" />
   </classpaths>
   <!-- Build options -->
   <build>
@@ -73,7 +73,7 @@
   </library>
   <!-- Class files to compile (other referenced classes will automatically be included) -->
   <compileTargets>
-    <compile path="src/$ProjectName.mxml" />
+    <compile path="$SourceFile" />
   </compileTargets>
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>

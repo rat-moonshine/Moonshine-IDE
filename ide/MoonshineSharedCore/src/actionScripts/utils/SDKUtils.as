@@ -29,6 +29,7 @@ package actionScripts.utils
 	import actionScripts.factory.FileLocation;
 	import actionScripts.locator.IDEModel;
 	import actionScripts.plugin.help.HelpPlugin;
+	import actionScripts.plugin.startup.StartupHelperPlugin;
 	import actionScripts.valueObjects.ConstantsCoreVO;
 	import actionScripts.valueObjects.ProjectReferenceVO;
 	
@@ -211,11 +212,11 @@ package actionScripts.utils
 			// 3. user didn't choose to not show sdk extraction prompt again
 			if (ConstantsCoreVO.IS_BUNDLED_SDK_PRESENT && ((IDEModel.getInstance().userSavedSDKs.length == 0) || (IDEModel.getInstance().userSavedSDKs[0].status != SDKUtils.BUNDLED)) && !ConstantsCoreVO.IS_BUNDLED_SDK_PROMPT_DNS) 
 			{
-				GlobalEventDispatcher.getInstance().dispatchEvent(new Event(HelpPlugin.EVENT_SDK_UNZIP_REQUEST));
+				GlobalEventDispatcher.getInstance().dispatchEvent(new Event(StartupHelperPlugin.EVENT_SDK_UNZIP_REQUEST));
 			}
 			else if (((IDEModel.getInstance().userSavedSDKs.length == 0) || (IDEModel.getInstance().userSavedSDKs[0].status != SDKUtils.BUNDLED)) && !ConstantsCoreVO.IS_SDK_HELPER_PROMPT_DNS) 
 			{
-				GlobalEventDispatcher.getInstance().dispatchEvent(new Event(HelpPlugin.EVENT_SDK_HELPER_DOWNLOAD_REQUEST));
+				GlobalEventDispatcher.getInstance().dispatchEvent(new Event(StartupHelperPlugin.EVENT_SDK_HELPER_DOWNLOAD_REQUEST));
 			}
 			else 
 			{

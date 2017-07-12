@@ -35,7 +35,7 @@ package actionScripts.ui.editor.text
 
 	public class GotoDefinitionManager
 	{
-		protected static const NON_WORD_CHARACTERS:Vector.<String> = new <String>[" ", ".", ":", ";", "\t", ",", "(", ")", "[", "]", "{", "}"];
+		protected static const NON_WORD_CHARACTERS:Vector.<String> = new <String>[" ", "\t", ".", ":", ";", ",", "?", "+", "-", "*", "/", "%", "=", "!", "&", "|", "(", ")", "[", "]", "{", "}", "<", ">"];
 		
 		protected var editor:TextEditor;
 		protected var model:TextEditorModel;

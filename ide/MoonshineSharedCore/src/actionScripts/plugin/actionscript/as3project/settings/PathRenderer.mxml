@@ -69,9 +69,10 @@
 			
 			protected function onCreationCompletes(event:FlexEvent):void
 			{
+				var tmpLocalCheckPath:String;
 				if (data && (data.file.fileBridge.nativePath.indexOf("{locale}") != -1))
 				{
-					var tmpLocalCheckPath:String = OSXBookmarkerNotifiers.isValidLocalePath(data.file as FileLocation);
+					tmpLocalCheckPath = OSXBookmarkerNotifiers.isValidLocalePath(data.file as FileLocation);
 					if (tmpLocalCheckPath != null)
 					{
 						isFileExists = (new FileLocation(tmpLocalCheckPath)).fileBridge.exists;

@@ -54,6 +54,7 @@ package actionScripts.plugin.actionscript.as3project
 		private var importProjectPopup:OpenFlexProject;
 		private var flashBuilderProjectFile:FileLocation;
 		private var flashDevelopProjectFile:FileLocation;
+		private var nonProjectFolderLocation:FileLocation;
 		
 		override public function get name():String 			{return "AS3 Project Plugin";}
 		override public function get author():String 		{return "Moonshine Project Team";}
@@ -150,7 +151,8 @@ package actionScripts.plugin.actionscript.as3project
 			
 			if (!isFBProject && !isFDProject)
 			{
-				Alert.show("Can't import: Not a valid Flex project directory.", "Error!");
+				nonProjectFolderLocation = new FileLocation(dir.nativePath);
+				Alert.show("This directory is missing the Moonshine project configuration files. Do you want to generate a new project by locating existing source?", "Error!", Alert.YES|Alert.NO, null, onExistingSourceProjectConfirm);
 			}
 			else if (isFBProject && isFDProject)
 			{
@@ -171,6 +173,16 @@ package actionScripts.plugin.actionscript.as3project
 			}
 			else if (isFBProject) importFBProject();
 			else if (isFDProject) importFDProject(flashDevelopProjectFile);
+		}
+		
+		private function onExistingSourceProjectConfirm(event:CloseEvent):void
+		{
+			if (event.detail == Alert.YES)
+			{
+				createAS3Project(new NewProjectEvent("", "as3proj", null, nonProjectFolderLocation));
+			}
+			
+			nonProjectFolderLocation = null;
 		}
 		
 		private function projectChoiceHandler(event:CloseEvent):void

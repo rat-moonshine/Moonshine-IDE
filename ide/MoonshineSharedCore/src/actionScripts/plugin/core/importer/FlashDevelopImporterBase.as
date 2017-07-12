@@ -19,22 +19,34 @@
 package actionScripts.plugin.core.importer
 {
 	import actionScripts.factory.FileLocation;
+	import actionScripts.locator.IDEModel;
 	import actionScripts.utils.UtilsCore;
 	import actionScripts.valueObjects.ConstantsCoreVO;
 	import actionScripts.valueObjects.ProjectVO;
 	
 	public class FlashDevelopImporterBase extends ProjectImporterBase
 	{
-		protected static function parsePaths(paths:XMLList, v:Vector.<FileLocation>, p:ProjectVO, attrName:String="path"):void 
+		protected static function parsePaths(paths:XMLList, v:Vector.<FileLocation>, p:ProjectVO, attrName:String="path", customSDKPath:String=null):void 
 		{
 			for each (var pathXML:XML in paths)
 			{
 				var path:String = pathXML.attribute(attrName);
 				// file separator fix
 				path = UtilsCore.fixSlashes(path);
-				var f:FileLocation = p.folderLocation.resolvePath(path);
-				if (ConstantsCoreVO.IS_AIR) f.fileBridge.canonicalize();
+				var f:FileLocation = null;
+				if (path.indexOf("${flexlib}") == -1)
+				{
+					f = p.folderLocation.resolvePath(path);
+				}
+				else
+				{
+					path = path.replace("${flexlib}", "");
+					if (customSDKPath) f = new FileLocation(customSDKPath +"/frameworks"+ path);
+					else if (!f && IDEModel.getInstance().defaultSDK) f = new FileLocation(IDEModel.getInstance().defaultSDK.fileBridge.nativePath +"/frameworks"+ path);
+					if (!f) f = p.folderLocation.resolvePath(path);
+				}
 				
+				if (ConstantsCoreVO.IS_AIR) f.fileBridge.canonicalize();
 				v.push(f);
 			}
 		}

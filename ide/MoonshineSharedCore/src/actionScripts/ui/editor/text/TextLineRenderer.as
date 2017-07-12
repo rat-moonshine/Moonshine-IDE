@@ -18,16 +18,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 package actionScripts.ui.editor.text
 {
-	import actionScripts.valueObjects.Diagnostic;
-	import actionScripts.valueObjects.Settings;
-	
 	import flash.display.DisplayObject;
 	import flash.display.Graphics;
 	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.events.TimerEvent;
 	import flash.geom.Point;
-	import flash.geom.Rectangle;
 	import flash.geom.Rectangle;
 	import flash.text.engine.ContentElement;
 	import flash.text.engine.ElementFormat;
@@ -42,6 +38,9 @@ package actionScripts.ui.editor.text
 	import mx.controls.Alert;
 	
 	import spark.components.Label;
+	
+	import actionScripts.valueObjects.Diagnostic;
+	import actionScripts.valueObjects.Settings;
 	
 	
 	public class TextLineRenderer extends Sprite
@@ -80,7 +79,7 @@ package actionScripts.ui.editor.text
 		private var selection:Sprite;
 		private var traceSelection:Sprite;
 		private var lineSelection:Sprite;
-	
+		
 		
 		private var _dataIndex:int;
 		public function get dataIndex():int
@@ -93,7 +92,6 @@ package actionScripts.ui.editor.text
 			
 			drawLineNumber();
 		}
-		
 		
 		private var _model:TextLineModel;
 		public function get model():TextLineModel
@@ -432,6 +430,14 @@ package actionScripts.ui.editor.text
 			}
 			
 			groupElement.setElements(e);
+			
+			if (e.length >= 2 && e[e.length-2].elementFormat.color == 0xca2323) 
+			{
+				var textToElement:String = e[e.length-2].text;
+				var startChar:String = textToElement.charAt(0);
+				model.isQuoteTextOpen = textToElement.length == 1 || textToElement.charAt(textToElement.length - 1) != startChar;
+				model.lastQuoteText = startChar;
+			}
 			
 			textBlock.tabStops = tabStops;
 			textBlock.content = groupElement; 

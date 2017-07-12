@@ -448,7 +448,8 @@ package actionScripts.plugins.as3project.mxmlc
 				|| usingInvalidSDK(pvo as AS3ProjectVO)) 
 			{
 				currentProject = pvo;
-				currentSDK = getCurrentSDK(pvo as AS3ProjectVO);
+				var tmpSDKLocation:Object = UtilsCore.getCurrentSDK(pvo as AS3ProjectVO); 
+				currentSDK = tmpSDKLocation ? tmpSDKLocation as File : null;
 				if (!currentSDK)
 				{
 					model.noSDKNotifier.notifyNoFlexSDK(false);
@@ -457,7 +458,24 @@ package actionScripts.plugins.as3project.mxmlc
 					error("No Flex SDK found. Setup one in Settings menu.");
 					return;
 				}
-				var mxmlcFile:File = currentSDK.resolvePath(mxmlcPath);
+				
+				// we need some extra work to determine if FlexJS version is lower than 0.8.0
+				// to ensure addition of new compiler argument '-compiler.targets' 
+				// which do not works with SDK < 0.8.0
+				var sdkFullName:String;
+				for each (var i:ProjectReferenceVO in model.userSavedSDKs)
+				{
+					if (currentSDK.nativePath == i.path)
+					{
+						sdkFullName = i.name;
+						break;
+					}
+				}
+				
+				// determine if the sdk version is lower than 0.8.0 or not
+				var isFlexJSAfter7:Boolean = UtilsCore.isNewerVersionSDKThan(7, sdkFullName);
+				
+				var mxmlcFile:File = currentSDK.resolvePath("js/bin/mxmlc");
 				if (!mxmlcFile.exists)
 				{
 					Alert.show("Invalid SDK - Please configure a FlexJS SDK instead","Error!");
@@ -489,12 +507,12 @@ package actionScripts.plugins.as3project.mxmlc
 				if(Settings.os == "win")
 				{
 					processArgs.push("/c");
-					processArgs.push("set FLEX_HOME="+SDKstr+"&& "+fschstr + FlexJSCompileStr);
+					processArgs.push("set FLEX_HOME="+ SDKstr +"&& "+ fschstr + FlexJSCompileStr + (isFlexJSAfter7 ? " -compiler.targets=SWF" : ""));
 				}
 				else
 				{
 					processArgs.push("-c");
-					processArgs.push("export FLEX_HOME="+SDKstr+"&&"+"export FALCON_HOME="+SDKstr+"&&"+fschstr + FlexJSCompileStr);
+					processArgs.push("export FLEX_HOME="+SDKstr+"&&"+"export FALCON_HOME="+SDKstr+"&&"+fschstr + FlexJSCompileStr + (isFlexJSAfter7 ? " -compiler.targets=SWF" : ""));
 				}
 				//var workingDirectory:File = currentSDK.resolvePath("bin/");
 				
@@ -512,7 +530,8 @@ package actionScripts.plugins.as3project.mxmlc
 				|| usingInvalidSDK(pvo as AS3ProjectVO)) 
 			{
 				currentProject = pvo;
-				currentSDK = getCurrentSDK(pvo as AS3ProjectVO);
+				var tmpSDKLocation:Object = UtilsCore.getCurrentSDK(pvo as AS3ProjectVO); 
+				currentSDK = tmpSDKLocation ? tmpSDKLocation as File : null;
 				if (!currentSDK)
 				{
 					model.noSDKNotifier.notifyNoFlexSDK(false);
@@ -560,11 +579,6 @@ package actionScripts.plugins.as3project.mxmlc
 			debug("SDK path: %s", currentSDK.nativePath);
 			var compileStr:String = compile(pvo as AS3ProjectVO, release);
 			send(compileStr);
-		}
-		
-		private function getCurrentSDK(pvo:AS3ProjectVO):File 
-		{
-			return pvo.buildOptions.customSDK ? pvo.buildOptions.customSDK.fileBridge.getFile as File : (IDEModel.getInstance().defaultSDK ? IDEModel.getInstance().defaultSDK.fileBridge.getFile as File : null);
 		}
 		
 		private function clearConsoleBeforeRun():void

@@ -135,7 +135,6 @@ package actionScripts.plugin.settings.vo
 
         }
 		
-
         // Commits changes back to provider
         protected function setPendingSetting(v:*):void
         {

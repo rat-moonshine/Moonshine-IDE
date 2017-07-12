@@ -23,6 +23,41 @@ package actionScripts.utils
 	
 	public class TextUtil
 	{
+		private static const NON_WORD_CHARACTERS:Vector.<String> = new <String>[" ", "\t", ".", ":", ";", ",", "?", "+", "-", "*", "/", "%", "=", "!", "&", "|", "(", ")", "[", "]", "{", "}", "<", ">"];
+
+		public static function startOfWord(line:String, charIndex:int):int
+		{
+			var startChar:int = 0;
+			for(var i:int = charIndex - 1; i >= 0; i--)
+			{
+				var char:String = line.charAt(i);
+				if(NON_WORD_CHARACTERS.indexOf(char) !== -1)
+				{
+					//include the next character, but not this
+					//one, because it's not part of the word
+					startChar = i + 1;
+					break;
+				}
+			}
+			return startChar;
+		}
+
+		public static function endOfWord(line:String, charIndex:int):int
+		{
+			var endChar:int = line.length;
+			for(var i:int = charIndex + 1; i < endChar; i++)
+			{
+				var char:String = line.charAt(i);
+				if(NON_WORD_CHARACTERS.indexOf(char) !== -1)
+				{
+					endChar = i;
+					break;
+				}
+			}
+			return endChar;
+			
+		}
+		
 		// Find word boundary from the beginning of the line
 		public static function wordBoundaryForward(line:String):int
 		{
@@ -66,8 +101,7 @@ package actionScripts.utils
 		public static function charIdx2LineCharIdx(str:String, charIdx:int, lineDelim:String):Point
 		{
 			var line:int = str.substr(0,charIdx).split(lineDelim).length - 1;
- 		    var chr:int = line > 0 ? charIdx - str.lastIndexOf(lineDelim,charIdx) - lineDelim.length : charIdx;
- 
+			var chr:int = line > 0 ? charIdx - str.lastIndexOf(lineDelim, charIdx - 1) - lineDelim.length : charIdx;
         	return new Point(line, chr);
 		} 
 		

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project>
   <output>
-    <movie path="bin-debug/$ProjectName.swf"/>
+    <movie path="bin-debug/$ProjectSWF"/>
     <movie width="800"/>
     <movie height="600"/>
     <movie version="$MovieVersion"/>
@@ -11,7 +11,7 @@
     <movie fps="60"/>
   </output>
   <classpaths>
-    <class path="src"/>
+    <class path="$SourcePath"/>
   </classpaths>
   <build>
     <option benchmark="False"/>
@@ -37,7 +37,6 @@
     <option optimize="False"/>
     <option accessible="False"/>
   </build>
-   <libraryPaths />
   <includeLibraries/>
   <libraryPaths/>
   <externalLibraryPaths>
@@ -47,7 +46,7 @@
   <intrinsics/>
   <library/>
   <compileTargets>
-    <compile path="src/$ProjectName.mxml"/>
+    <compile path="$SourceFile"/>
   </compileTargets>
   <hiddenPaths/>
   <preBuildCommand/>
@@ -55,6 +54,6 @@
   <options>
     <option testMovie="AIR"/>
     <option showHiddenPaths="False"/>
-    <option testMovieCommand="RunExtended.bat;$(CompilerPath) src/$ProjectName-app.xml bin"/>
+    <option testMovieCommand="RunExtended.bat;$(CompilerPath) src/$DesktopDescriptor-app.xml bin"/>
   </options>
 </project>

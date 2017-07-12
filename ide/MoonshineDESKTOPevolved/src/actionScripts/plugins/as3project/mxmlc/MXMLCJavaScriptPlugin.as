@@ -62,6 +62,7 @@ package actionScripts.plugins.as3project.mxmlc
 	import actionScripts.utils.OSXBookmarkerNotifiers;
 	import actionScripts.utils.UtilsCore;
 	import actionScripts.valueObjects.ConstantsCoreVO;
+	import actionScripts.valueObjects.ProjectReferenceVO;
 	import actionScripts.valueObjects.ProjectVO;
 	import actionScripts.valueObjects.Settings;
 	
@@ -295,7 +296,8 @@ package actionScripts.plugins.as3project.mxmlc
 				|| usingInvalidSDK(activeProject as AS3ProjectVO)) 
 			{
 				currentProject = activeProject;
-				currentSDK = getCurrentSDK(activeProject as AS3ProjectVO);
+				var tmpSDKLocation:Object = UtilsCore.getCurrentSDK(activeProject as AS3ProjectVO); 
+				currentSDK = tmpSDKLocation ? tmpSDKLocation as File : null;
 				if (!currentSDK)
 				{
 					model.noSDKNotifier.notifyNoFlexSDK(false);
@@ -304,6 +306,22 @@ package actionScripts.plugins.as3project.mxmlc
 					error("No FlexJS SDK found. Setup one in Settings menu.");
 					return;
 				}
+				
+				// we need some extra work to determine if FlexJS version is lower than 0.8.0
+				// to ensure addition of new compiler argument '-compiler.targets' 
+				// which do not works with SDK < 0.8.0
+				var sdkFullName:String;
+				for each (var i:ProjectReferenceVO in model.userSavedSDKs)
+				{
+					if (currentSDK.nativePath == i.path)
+					{
+						sdkFullName = i.name;
+						break;
+					}
+				}
+				
+				// determine if the sdk version is lower than 0.8.0 or not
+				var isFlexJSAfter7:Boolean = UtilsCore.isNewerVersionSDKThan(7, sdkFullName);
 				
 				var fschFile:File = currentSDK.resolvePath(fcshPath);
 				if (!fschFile.exists)
@@ -343,7 +361,7 @@ package actionScripts.plugins.as3project.mxmlc
 					if(Settings.os == "win")
 					{
 						processArgs.push("/c");
-						processArgs.push("set FLEX_HOME="+ SDKstr +"&& "+ fschstr +" -load-config+="+as3Pvo.folderLocation.fileBridge.getRelativePath(as3Pvo.config.file) +" "+ buildArgs);
+						processArgs.push("set FLEX_HOME="+ SDKstr +"&& "+ fschstr +" -load-config+="+as3Pvo.folderLocation.fileBridge.getRelativePath(as3Pvo.config.file) +" "+ buildArgs +(isFlexJSAfter7 ? " -compiler.targets=JSFLEX" : ""));
 					}
 					else
 					{
@@ -355,7 +373,7 @@ package actionScripts.plugins.as3project.mxmlc
 						}*/
 						
 						processArgs.push("-c");
-						processArgs.push("export FLEX_HOME="+ SDKstr +"&&export FALCON_HOME="+ SDKstr +"&&"+ fschstr +" -load-config+="+as3Pvo.folderLocation.fileBridge.getRelativePath(as3Pvo.config.file) +" "+ buildArgs);
+						processArgs.push("export FLEX_HOME="+ SDKstr +"&&export FALCON_HOME="+ SDKstr +"&&"+ fschstr +" -load-config+="+as3Pvo.folderLocation.fileBridge.getRelativePath(as3Pvo.config.file) +" "+ buildArgs +(isFlexJSAfter7 ? " -compiler.targets=JSFLEX" : ""));
 					}
 					
 					shellInfo.arguments = processArgs;
@@ -492,11 +510,6 @@ package actionScripts.plugins.as3project.mxmlc
 			return false;
 		}
 		
-		private function getCurrentSDK(pvo:AS3ProjectVO):File 
-		{
-			return pvo.buildOptions.customSDK ? pvo.buildOptions.customSDK.fileBridge.getFile as File : (IDEModel.getInstance().defaultSDK ? IDEModel.getInstance().defaultSDK.fileBridge.getFile as File : null);
-		}
-		
 		private function compile(pvo:AS3ProjectVO):FileLocation 
 		{
 			clearConsoleBeforeRun();
@@ -584,23 +597,62 @@ package actionScripts.plugins.as3project.mxmlc
 				var match:Array;
 				match = data.match(/successfully compiled and optimized/);
 				if (match) 
-				{ // Successful compile
-					//binDebugPath = match[1];
-					binDebugPath = "bin/js-debug/index.html";
-					binReleasePath = "bin/js-release";
-					print("Project Build Successfully");
-					dispatcher.dispatchEvent(new RefreshTreeEvent((currentProject as AS3ProjectVO).folderLocation.resolvePath("bin")));
-				    if(this.runAfterBuild)
-				    {
-						testMovie();
-				    }
-					else if (AS3ProjectVO(currentProject).resourcePaths.length != 0)
+				{
+					// @ note
+					// @ devsena
+					// while working on MOON#311 (create new project with existing source)
+					// I noticed that FlexJS compiler produce it's 'bin' folder to first
+					// folder of the source path. Thus if a source file exists at
+					// <projectRoot>/src/subA/subB/JSApplication.mxml, the 'bin' folder produces at
+					// <projectRoot>/src. I also noticed if the source folder name do not starts with 'src'
+					// this problem also arise. Ideally the 'bin' folder was supposed to create at
+					// <projectRoot>. 
+					// Following folder move will fix this problem
+					
+					// source location
+					var sourcePath:String = currentProject.folderLocation.fileBridge.getRelativePath((currentProject as AS3ProjectVO).classpaths[0]);
+					var sourcePathSplit:Array = sourcePath.split("/");
+					var sourceFolder:FileLocation = (currentProject as AS3ProjectVO).classpaths[0].fileBridge.parent;
+					if (sourcePathSplit[0] != "src" || sourceFolder.fileBridge.nativePath != (currentProject as AS3ProjectVO).folderLocation.fileBridge.nativePath)
 					{
-						var swfFile:File = currentProject.folderLocation.resolvePath(binDebugPath).fileBridge.getFile as File;
-						resourceCopiedIndex = 0;
-						getResourceCopied(currentProject as AS3ProjectVO, swfFile);
+						sourceFolder = currentProject.folderLocation.fileBridge.resolvePath(sourcePathSplit[0] + "/bin");
+						if (sourceFolder.fileBridge.exists)
+						{
+							sourceFolder.fileBridge.getFile.addEventListener(Event.COMPLETE, onBinFolderMoveComplete);
+							sourceFolder.fileBridge.moveToAsync((currentProject as AS3ProjectVO).folderLocation.resolvePath("bin"), true);
+						}
+						else
+						{
+							sourceFolder = currentProject.folderLocation.fileBridge.resolvePath("bin");
+							if (sourceFolder.fileBridge.exists) onBinFolderMoveComplete(null);
+						}
 					}
-					reset();	
+					else
+						onBinFolderMoveComplete(null);
+					
+					/*
+					 *@local
+					 */
+					function onBinFolderMoveComplete(event:Event):void
+					{
+						if (event) event.target.removeEventListener(Event.COMPLETE, onBinFolderMoveComplete);
+						
+						binDebugPath = "bin/js-debug/index.html";
+						binReleasePath = "bin/js-release";
+						print("Project Build Successfully");
+						dispatcher.dispatchEvent(new RefreshTreeEvent((currentProject as AS3ProjectVO).folderLocation.resolvePath("bin")));
+					    if(runAfterBuild)
+					    {
+							testMovie();
+					    }
+						else if (AS3ProjectVO(currentProject).resourcePaths.length != 0)
+						{
+							var swfFile:File = currentProject.folderLocation.resolvePath(binDebugPath).fileBridge.getFile as File;
+							resourceCopiedIndex = 0;
+							getResourceCopied(currentProject as AS3ProjectVO, swfFile);
+						}
+						reset();	
+					}
 				}
 				
 				

@@ -28,6 +28,8 @@ package actionScripts.ui.editor.text
 		protected var _width:Number = -1;
 		protected var _traceLine:Boolean;
 		protected var _diagnostics:Vector.<Diagnostic> = new <Diagnostic>[];
+		protected var _isQuoteTextOpen:Boolean;
+		protected var _lastQuoteText:String;
 		
 		public function set text(v:String):void
 		{
@@ -100,6 +102,24 @@ package actionScripts.ui.editor.text
 		public function toString():String
 		{
 			return text;
+		}
+		
+		public function set isQuoteTextOpen(v:Boolean):void
+		{
+			_isQuoteTextOpen = v;
+		}
+		public function get isQuoteTextOpen():Boolean
+		{
+			return _isQuoteTextOpen;
+		}
+		
+		public function set lastQuoteText(v:String):void
+		{
+			_lastQuoteText = v;
+		}
+		public function get lastQuoteText():String
+		{
+			return _lastQuoteText;
 		}
 	}
 }

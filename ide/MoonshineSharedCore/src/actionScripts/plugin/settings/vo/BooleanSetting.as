@@ -19,17 +19,20 @@
 package actionScripts.plugin.settings.vo
 {
     import mx.core.IVisualElement;
+    
     import actionScripts.plugin.settings.renderers.BooleanRenderer;
 
     public class BooleanSetting extends AbstractSetting
     {
-
-        public function BooleanSetting(provider:Object, name:String, label:String)
+		private var immediateSave:Boolean;
+		
+        public function BooleanSetting(provider:Object, name:String, label:String, immediateSave:Boolean=false)
         {
             super();
             this.provider = provider;
             this.name = name;
             this.label = label;
+			this.immediateSave = immediateSave;
             defaultValue = stringValue;
         }
 
@@ -49,6 +52,7 @@ package actionScripts.plugin.settings.vo
         public function set value(v:Boolean):void
         {
             setPendingSetting(v);
+			if (immediateSave) commitChanges();
         }
 
         override public function get renderer():IVisualElement
