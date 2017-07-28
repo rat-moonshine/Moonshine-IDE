@@ -35,6 +35,7 @@ package actionScripts.plugins.ant
 	import mx.core.IFlexDisplayObject;
 	import mx.events.CloseEvent;
 	import mx.managers.PopUpManager;
+	import mx.utils.ObjectUtil;
 	
 	import spark.components.supportClasses.DisplayLayer;
 	
@@ -83,7 +84,7 @@ package actionScripts.plugins.ant
 		private var errors:String = "";
 		private var exiting:Boolean = false;
 		private var _antHomePath:String;
-		private var antPath:String = "bin/ant";
+		private var antPath:String = "ant";
 		private var _instance:AntBuildPlugin;
 		private var workingDir:FileLocation;
 		private var file:FileLocation;
@@ -415,6 +416,7 @@ package actionScripts.plugins.ant
 			var processArgs:Vector.<String> = new Vector.<String>;
 			shellInfo = new NativeProcessStartupInfo();
 			var antFile:FileLocation = model.antHomePath.resolvePath(antPath);
+			if (!antFile.fileBridge.exists) antFile = model.antHomePath.resolvePath("bin/"+ antPath);
 			var ANTstr:String = antFile.fileBridge.nativePath;
 			ANTstr = UtilsCore.convertString(ANTstr);
 			SDKstr =  UtilsCore.convertString(currentSDK.fileBridge.nativePath);
@@ -433,7 +435,8 @@ package actionScripts.plugins.ant
 				shellInfo.arguments = processArgs;
 				shellInfo.executable = cmdFile;
 			}
-			shellInfo.workingDirectory = buildDir.fileBridge.parent as File; //pvo.folder;
+			
+			shellInfo.workingDirectory = buildDir.fileBridge.parent.fileBridge.getFile as File; //pvo.folder;
 			initShell();
 		}
 		private function initShell():void 
@@ -449,6 +452,9 @@ package actionScripts.plugins.ant
 		
 		private function startShell():void 
 		{
+			if (ConstantsCoreVO.IS_CONSOLE_CLEARED_ONCE) clearOutput();
+			ConstantsCoreVO.IS_CONSOLE_CLEARED_ONCE = true;
+			
 			nativeProcess = new NativeProcess();
 			nativeProcess.addEventListener(ProgressEvent.STANDARD_OUTPUT_DATA, shellData);
 			nativeProcess.addEventListener(ProgressEvent.STANDARD_ERROR_DATA, shellError);

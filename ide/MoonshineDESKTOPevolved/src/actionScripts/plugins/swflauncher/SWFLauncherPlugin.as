@@ -163,7 +163,7 @@ package actionScripts.plugins.swflauncher
 			// Guesstimate app-xml name
 			var rootPath:String = File(project.folderLocation.fileBridge.getFile).getRelativePath(file.parent);
 			var descriptorName:String = project.swfOutput.path.fileBridge.name.split(".")[0] +"-app.xml";
-			var appXML:String = project.classpaths[0].fileBridge.nativePath + File.separator + descriptorName;
+			var appXML:String = project.sourceFolder.fileBridge.nativePath + File.separator + descriptorName;
 			var descriptorFile:File = new File(appXML);
 			
 			// in case /src/app-xml present update to bin-debug folder
@@ -217,8 +217,15 @@ package actionScripts.plugins.swflauncher
 			var isFlashDevelopProject: Boolean = (project.projectFile && project.projectFile.fileBridge.nativePath.indexOf(".as3proj") != -1) ? true : false;
 			if (project.isMobile)
 			{
+				// @note
+				// https://feathersui.com/help/faq/display-density.html
+				
 				processArgs.push("-screensize");
-				processArgs.push("iPhone");
+				processArgs.push("480x775:480x800"); // NexusOne
+				processArgs.push("-XscreenDPI");
+				processArgs.push("217");
+				processArgs.push("-XversionPlatform");
+				processArgs.push("AND");
 				processArgs.push("-profile");
 				processArgs.push("mobileDevice");
 			}
