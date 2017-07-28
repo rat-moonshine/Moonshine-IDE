@@ -53,8 +53,7 @@
   </includeLibraries>
   <!-- SWC Libraries -->
   <libraryPaths>
-    <element path="${flexlib}/libs/feathers.swc"/>
-    <element path="${flexlib}/themes/MetalWorksMobileTheme/MetalWorksMobileTheme.swc"/>
+    <element path="${flexlib}/frameworks/themes/MetalWorksMobileTheme/MetalWorksMobileTheme.swc"/>
   </libraryPaths>
   <!-- External Libraries -->
   <externalLibraryPaths>

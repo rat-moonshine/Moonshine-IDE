@@ -39,8 +39,7 @@
   </build>
   <includeLibraries/>
   <libraryPaths>
-  	<element path="${flexlib}/libs/feathers.swc"/>
-    <element path="${flexlib}/themes/MetalWorksDesktopTheme/MetalWorksDesktopTheme.swc"/>
+    <element path="${flexlib}/frameworks/themes/MetalWorksDesktopTheme/MetalWorksDesktopTheme.swc"/>
   </libraryPaths>
   <externalLibraryPaths>
   	<!-- example: <element path="..." /> -->

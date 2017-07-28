@@ -3,7 +3,7 @@
 	
 	<id>$ProjectID</id>
 	<versionNumber>0.0</versionNumber>
-	<supportedProfiles>mobileDevice</supportedProfiles>
+	<!--supportedProfiles>mobileDevice</supportedProfiles-->
 	<filename>$SourceNameOnly</filename>
 	
 	<name>$SourceNameOnly</name>
@@ -47,7 +47,7 @@
 	
 	<initialWindow>
 		<title>$ProjectName</title>
-		<content>$ProjectSWF</content>
+		<content>[This value will be overwritten by Flash Builder in the output app.xml]</content>
 		<visible>true</visible>
 		<fullScreen>true</fullScreen>
 		<!--<autoOrients>false</autoOrients>-->

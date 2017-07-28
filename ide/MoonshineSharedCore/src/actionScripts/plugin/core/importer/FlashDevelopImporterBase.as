@@ -19,7 +19,6 @@
 package actionScripts.plugin.core.importer
 {
 	import actionScripts.factory.FileLocation;
-	import actionScripts.locator.IDEModel;
 	import actionScripts.utils.UtilsCore;
 	import actionScripts.valueObjects.ConstantsCoreVO;
 	import actionScripts.valueObjects.ProjectVO;
@@ -33,18 +32,7 @@ package actionScripts.plugin.core.importer
 				var path:String = pathXML.attribute(attrName);
 				// file separator fix
 				path = UtilsCore.fixSlashes(path);
-				var f:FileLocation = null;
-				if (path.indexOf("${flexlib}") == -1)
-				{
-					f = p.folderLocation.resolvePath(path);
-				}
-				else
-				{
-					path = path.replace("${flexlib}", "");
-					if (customSDKPath) f = new FileLocation(customSDKPath +"/frameworks"+ path);
-					else if (!f && IDEModel.getInstance().defaultSDK) f = new FileLocation(IDEModel.getInstance().defaultSDK.fileBridge.nativePath +"/frameworks"+ path);
-					if (!f) f = p.folderLocation.resolvePath(path);
-				}
+				var f:FileLocation = p.folderLocation.resolvePath(path);;
 				
 				if (ConstantsCoreVO.IS_AIR) f.fileBridge.canonicalize();
 				v.push(f);

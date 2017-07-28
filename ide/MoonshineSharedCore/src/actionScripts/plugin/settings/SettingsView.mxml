@@ -61,6 +61,7 @@
 			private var forceClose:Boolean;
 			
 			public var buttons:Array = [];
+			public var isNewProjectSettings:Boolean;
 			
 			public var showDefaultButtons:Boolean = true;
 			public var defaultSaveLabel:String = "Save";
@@ -140,10 +141,13 @@
 					// or a same named project exists but it may not have .as3proj file - mainly when Flash Builder project
 					
 					// checking .project file existence and it's name in case of Flash Builder project
-					projectFile = new FileLocation(project.folderLocation.fileBridge.nativePath + project.folderLocation.fileBridge.separator + ".project");
-					if (projectFile.fileBridge.exists)
+					if (!isNewProjectSettings)
 					{
-						goSave();
+						projectFile = new FileLocation(project.folderLocation.fileBridge.nativePath + project.folderLocation.fileBridge.separator + ".project");
+						if (projectFile.fileBridge.exists)
+						{
+							goSave();
+						}
 					}
 					else
 					{

@@ -47,7 +47,7 @@
 	
 	<initialWindow>
 		<title>$ProjectName</title>
-		<content>$ProjectSWF</content>
+		<content>[This value will be overwritten by Flash Builder in the output app.xml]</content>
 		<visible>true</visible>
 		<fullScreen>true</fullScreen>
 		<!--<autoOrients>false</autoOrients>-->
